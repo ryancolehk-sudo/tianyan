@@ -1,0 +1,192 @@
+name: ${COMPOSE_PROJECT_NAME:?Run python scripts/project.py init first}
+
+x-backend: &backend
+  build:
+    context: .
+    dockerfile: infrastructure/docker/backend.Dockerfile
+    target: runtime
+    args:
+      PYTHON_IMAGE: ${PYTHON_IMAGE:?Run project.py lock first}
+    labels: &build-labels
+      org.opencontainers.image.revision: ${JL_BUILD_REVISION:-unrecorded}
+  environment: &app-env
+    JL_DATABASE_URL: postgresql+psycopg://jlpm_app:${DB_APP_PASSWORD:?Required}@db:5432/jiulong
+    JL_APP_MODE: ${JL_APP_MODE:?Required}
+    JL_PUBLIC_ORIGIN: ${JL_PUBLIC_ORIGIN:?Required}
+    JL_COOKIE_SECURE: ${JL_COOKIE_SECURE:-false}
+    JL_SESSION_COOKIE: ${JL_SESSION_COOKIE:?Run project.py init first}
+    JL_BUILD_REVISION: ${JL_BUILD_REVISION:-unrecorded}
+    JL_DATA_COLLECTION_ENABLED: ${JL_DATA_COLLECTION_ENABLED:-false}
+    JL_DEPLOYMENT_MODE: ${JL_DEPLOYMENT_MODE:-local}
+    JL_REQUIRED_WORKER_ROLES: '${JL_REQUIRED_WORKER_ROLES:-["scheduler","realtime","recovery","general"]}'
+    JL_RECOVERY_ENABLED: ${JL_RECOVERY_ENABLED:-true}
+    JL_READ_CACHE_ENABLED: ${JL_READ_CACHE_ENABLED:-true}
+    JL_MAINTENANCE_ENABLED: ${JL_MAINTENANCE_ENABLED:-true}
+    JL_UPDATE_FEED_URL: ${JL_UPDATE_FEED_URL:-}
+    JL_UPDATE_PUBLIC_KEY: ${JL_UPDATE_PUBLIC_KEY:-}
+    JL_UPDATE_ALLOWED_HOSTS: '${JL_UPDATE_ALLOWED_HOSTS:-[]}'
+    JL_UPDATE_CHANNEL: stable
+    JL_UPDATE_INSTALLATION: ${JL_UPDATE_INSTALLATION:-source}
+    JL_TICKFLOW_API_KEY: ${JL_TICKFLOW_API_KEY:-}
+    JL_MAIRUI_LICENCE: ${JL_MAIRUI_LICENCE:-}
+    JL_TUSHARE_TOKEN: ${JL_TUSHARE_TOKEN:-}
+    JL_TUSHARE_ENDPOINT: ${JL_TUSHARE_ENDPOINT:-https://api.tushare.pro/}
+    JL_AI_SECRET_DIRECTORY: /workspace/credentials
+    JL_AI_MASTER_KEY_FILE: /run/secrets/ai_master_key
+    JL_MODEL_ENABLED: ${JL_MODEL_ENABLED:-false}
+    JL_MODEL_CONNECTION_ID: ${JL_MODEL_CONNECTION_ID:-news-default}
+    JL_MODEL_BASE_URL: ${JL_MODEL_BASE_URL:-}
+    JL_MODEL_NAME: ${JL_MODEL_NAME:-}
+    JL_MODEL_CREDENTIAL_REF: ${JL_MODEL_CREDENTIAL_REF:-JL_MODEL_API_KEY}
+    JL_MODEL_API_KEY: ${JL_MODEL_API_KEY:-}
+    JL_MODEL_TIMEOUT_SECONDS: ${JL_MODEL_TIMEOUT_SECONDS:-30}
+    JL_MODEL_JSON_MODE: ${JL_MODEL_JSON_MODE:-true}
+    JL_MODEL_EXTRA_JSON: '${JL_MODEL_EXTRA_JSON:-{}}'
+    JL_NEWS_AI_ALLOWED_FAMILIES: ${JL_NEWS_AI_ALLOWED_FAMILIES:-}
+  init: true
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  mem_limit: 384m
+  cpus: 0.75
+  volumes: [artifacts:/workspace/artifacts, ai_credentials:/workspace/credentials, ai_master:/run/secrets:ro]
+  depends_on:
+    migrate: {condition: service_completed_successfully}
+    credential-init: {condition: service_completed_successfully}
+
+services:
+  credential-init:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend.Dockerfile
+      target: runtime
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:?Run project.py lock first}
+      labels: *build-labels
+    user: '0:0'
+    command: [python, -m, app.credential_init]
+    volumes: [ai_credentials:/credentials, ai_master:/master, '${JL_BACKUP_HOST_DIRECTORY:-./backups}:/workspace/backups', '${JL_UPDATE_HOST_DIRECTORY:-./updates}:/workspace/updates']
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    security_opt: [no-new-privileges:true]
+    restart: 'no'
+  db:
+    image: ${POSTGRES_IMAGE:?Run project.py lock first}
+    environment:
+      POSTGRES_DB: jiulong
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?Required}
+      DB_MIGRATE_PASSWORD: ${DB_MIGRATE_PASSWORD:?Required}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Required}
+      DB_MAINTENANCE_PASSWORD: ${DB_MAINTENANCE_PASSWORD:?Required}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./infrastructure/postgres-init.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U postgres -d jiulong']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 1.0
+    shm_size: 128m
+  migrate:
+    <<: *backend
+    environment:
+      <<: *app-env
+      JL_DATABASE_URL: postgresql+psycopg://jlpm_migrate:${DB_MIGRATE_PASSWORD:?Required}@db:5432/jiulong
+    command: [alembic, upgrade, head]
+    restart: 'no'
+    depends_on:
+      db: {condition: service_healthy}
+  api:
+    <<: *backend
+    mem_limit: 768m
+    command: [uvicorn, app.main:app, --host, 0.0.0.0, --port, '8000', --no-access-log, --proxy-headers, --forwarded-allow-ips, '*']
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  worker:
+    <<: *backend
+    command: [python, -m, app.worker, --role, general]
+    mem_limit: 768m
+  scheduler:
+    <<: *backend
+    command: [python, -m, app.worker, --role, scheduler]
+    mem_limit: 384m
+  realtime-worker:
+    <<: *backend
+    command: [python, -m, app.worker, --role, realtime, --slot, primary]
+    mem_limit: 768m
+  realtime-worker-secondary:
+    <<: *backend
+    command: [python, -m, app.worker, --role, realtime, --slot, secondary]
+    mem_limit: 768m
+  recovery-worker:
+    <<: *backend
+    command: [python, -m, app.worker, --role, recovery]
+    mem_limit: 768m
+  ai-worker:
+    <<: *backend
+    command: [python, -m, app.ai.worker]
+    mem_limit: 256m
+  read-cache-worker:
+    <<: *backend
+    command: [python, -m, app.read_cache_worker]
+    mem_limit: 384m
+  maintenance-worker:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: infrastructure/docker/maintenance.Dockerfile
+      target: runtime
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:?Run project.py lock first}
+        POSTGRES_IMAGE: ${POSTGRES_IMAGE:?Run project.py lock first}
+      labels: *build-labels
+    environment:
+      JL_DATABASE_URL: postgresql+psycopg://jlpm_maintenance:${DB_MAINTENANCE_PASSWORD:?Required}@db:5432/jiulong
+      JL_APP_MODE: ${JL_APP_MODE:?Required}
+      JL_PUBLIC_ORIGIN: ${JL_PUBLIC_ORIGIN:?Required}
+      JL_COOKIE_SECURE: ${JL_COOKIE_SECURE:-false}
+      JL_BUILD_REVISION: ${JL_BUILD_REVISION:-unrecorded}
+      JL_AI_SECRET_DIRECTORY: /workspace/credentials
+      JL_AI_MASTER_KEY_FILE: /run/secrets/ai_master_key
+      JL_UPDATE_FEED_URL: ${JL_UPDATE_FEED_URL:-}
+      JL_UPDATE_PUBLIC_KEY: ${JL_UPDATE_PUBLIC_KEY:-}
+      JL_UPDATE_ALLOWED_HOSTS: '${JL_UPDATE_ALLOWED_HOSTS:-[]}'
+      JL_UPDATE_INSTALLATION: ${JL_UPDATE_INSTALLATION:-source}
+    command: [python, -m, app.maintenance.worker]
+    volumes: [artifacts:/workspace/artifacts:ro, ai_credentials:/workspace/credentials:ro, ai_master:/run/secrets:ro, '${JL_BACKUP_HOST_DIRECTORY:-./backups}:/workspace/backups', '${JL_UPDATE_HOST_DIRECTORY:-./updates}:/workspace/updates']
+    mem_limit: 384m
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:?Run project.py lock first}
+        NGINX_IMAGE: ${NGINX_IMAGE:?Run project.py lock first}
+      labels: *build-labels
+    ports: ['${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8088}:8080']
+    depends_on:
+      api: {condition: service_healthy}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 0.5
+    volumes: ['${JL_MAINTENANCE_STATUS_DIRECTORY:-./maintenance-status}:/workspace/maintenance-status:ro']
+
+volumes:
+  postgres:
+  artifacts:
+  ai_credentials:
+  ai_master:

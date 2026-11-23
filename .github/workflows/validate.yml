@@ -1,0 +1,18 @@
+name: Validate source
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 -B scripts/check_repository.py
+      - run: python3 -B scripts/project.py verify-locks
+      - run: python3 -B scripts/source_distribution.py check
+      - run: python3 -B scripts/check_security.py --staged
+      - run: python3 -B scripts/check_security.py --history
+      - run: python3 -B -m unittest discover -s scripts/tests

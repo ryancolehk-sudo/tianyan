@@ -1,0 +1,78 @@
+# Apply after ../../compose.yaml. Requires Docker Compose >= 2.24.4.
+x-cloud-mode: &cloud-mode
+  JL_DEPLOYMENT_MODE: cloud
+
+services:
+  credential-init:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+  migrate:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+  api:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+    environment:
+      JL_DEPLOYMENT_MODE: cloud
+      JL_REQUIRED_WORKER_ROLES: '["scheduler","realtime","recovery","general"]'
+  worker:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+    command: [python, -m, app.worker, --role, general]
+    environment: *cloud-mode
+  scheduler:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+    command: [python, -m, app.worker, --role, scheduler]
+    environment: *cloud-mode
+  realtime-worker:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+    command: [python, -m, app.worker, --role, realtime, --slot, primary]
+    environment: *cloud-mode
+  realtime-worker-secondary:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+    command: [python, -m, app.worker, --role, realtime, --slot, secondary]
+    environment: *cloud-mode
+  recovery-worker:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+    command: [python, -m, app.worker, --role, recovery]
+    environment: *cloud-mode
+  ai-worker:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+    environment: *cloud-mode
+  read-cache-worker:
+    image: ${TIANYAN_BACKEND_IMAGE:?Run the cloud installer first}
+    environment: *cloud-mode
+  maintenance-worker:
+    image: ${TIANYAN_MAINTENANCE_IMAGE:?Run the cloud installer first}
+  web:
+    image: ${TIANYAN_WEB_IMAGE:?Run the cloud installer first}
+    ports: !reset []
+  edge:
+    image: ${CADDY_IMAGE:?The committed cloud image lock is required}
+    environment:
+      TIANYAN_DOMAIN: ${TIANYAN_DOMAIN:?A real domain is required}
+      TIANYAN_ACME_EMAIL: ${TIANYAN_ACME_EMAIL:?An ACME contact is required}
+    volumes:
+      - ./infrastructure/cloud/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    depends_on:
+      api: {condition: service_healthy}
+      web: {condition: service_started}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 0.5
+    healthcheck:
+      test: [CMD, wget, --quiet, --spider, 'http://127.0.0.1:2019/config/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  caddy_data:
+  caddy_config:

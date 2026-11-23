@@ -1,0 +1,7 @@
+{
+  "PYTHON_IMAGE": "python:3.14-slim-trixie",
+  "NODE_IMAGE": "node:24-trixie-slim",
+  "NGINX_IMAGE": "nginxinc/nginx-unprivileged:stable-alpine-slim",
+  "POSTGRES_IMAGE": "postgres:17-trixie",
+  "PLAYWRIGHT_IMAGE": "mcr.microsoft.com/playwright:v1.64.1-noble"
+}

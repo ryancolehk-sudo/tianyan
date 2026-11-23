@@ -1,0 +1,94 @@
+/* Shared columns and a bounded desktop viewport, with independent reading panes. */
+.ty-terminal-overview .ty-workspace-pane[hidden]{display:none}
+.ty-terminal-overview .ty-workspace-switch{display:flex;gap:4px;align-items:center;min-height:30px;margin-bottom:6px;border-bottom:1px solid var(--ty-line)}
+.ty-terminal-overview .ty-workspace-switch button{background:transparent;border:0;border-bottom:2px solid transparent;color:var(--ty-muted);padding:3px 12px;min-height:30px;font:inherit;font-size:13px;cursor:pointer;border-radius:0}
+.ty-terminal-overview .ty-workspace-switch button[aria-pressed=true]{color:var(--ty-gold);border-bottom-color:var(--ty-gold)}
+.ty-terminal-overview .ty-workspace-switch button:focus-visible{outline:2px solid var(--ty-gold);outline-offset:-2px}
+.ty-terminal-overview .ty-tracking-sector{min-width:0;max-width:160px;flex:1;height:24px;padding:0 4px;background:var(--ty-bg,#0c1922);border:1px solid var(--ty-line);color:var(--ty-gold)}
+.ty-terminal-overview .ty-workspace-pane{min-width:0;min-height:0}
+.ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-overview-boards{display:none}
+@media(min-width:1200px) and (min-height:600px){
+  .ty-shell:has(.ty-overview-screen){height:100dvh;min-height:0;overflow:hidden}
+  .ty-shell:has(.ty-overview-screen)>.ty-shell-workspace{height:100dvh;display:flex;flex-direction:column;min-height:0}
+  .ty-shell:has(.ty-overview-screen) :is(.ty-topbar,.ty-tabbar){flex-shrink:0}
+  .ty-shell:has(.ty-overview-screen) main.content{flex:1;min-height:0;overflow:hidden;padding-block:6px}
+  .ty-terminal.ty-terminal-overview{height:100%;min-height:0;display:flex;flex-direction:column}
+  .ty-terminal-overview .ty-overview-screen{flex:1;min-height:0;display:flex;flex-direction:column}
+  .ty-terminal-overview .ty-market-ribbon,.ty-terminal-overview .ty-workspace-switch{flex-shrink:0}
+  .ty-terminal-overview .ty-workspace-panes{flex:1;min-height:0}
+  .ty-terminal-overview .ty-workspace-pane{height:100%}
+  .ty-terminal-overview .ty-workspace-scroll{overflow:auto;overscroll-behavior:contain}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified{--overview-right:clamp(320px,29%,550px);height:100%;margin:0;grid-template-columns:minmax(440px,1fr) minmax(0,1fr) clamp(232px,20%,280px) var(--overview-right);grid-template-rows:minmax(0,1fr) minmax(0,1fr) minmax(252px,1.28fr);grid-template-areas:"strength strength selector breadth" "strength strength flows ladder" "stocks stocks stocks ladder";gap:6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-market-grid{display:contents}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row{grid-area:stocks;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);min-width:0;min-height:0;gap:6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-panel{height:100%;min-height:0;overflow:hidden}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-table-scroll{max-height:none;min-height:0;flex:1}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-mini-ladder-body{max-height:none;min-height:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-list{max-height:none;min-height:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-head{flex-shrink:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-rank-panel .ty-panel-head{flex-wrap:wrap;height:auto;min-height:28px;row-gap:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-table{width:100%;min-width:332px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-table :is(th,td){padding-inline:2px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-table :is(th,td):first-child{width:22px;padding-left:4px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-table :is(th,td):nth-child(2){width:74px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-table :is(th,td):nth-child(3){width:56px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-table :is(th,td):nth-child(4){width:64px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-table :is(th,td):nth-child(5){width:50px;text-align:right}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-table :is(th,td):last-child{width:auto;max-width:20ch}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-stock-name{max-width:100%;overflow:hidden}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-stock-label{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-controls input{width:64px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-controls select{width:64px}
+  .ty-terminal.ty-terminal-overview .ty-overview-strength-list .ty-panel-head{min-height:24px}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds .ty-panel-label{gap:4px;flex-wrap:wrap}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds .ty-panel-subtitle{font-size:11px}
+  .ty-terminal.ty-terminal-overview .ty-overview-tabs button{padding-inline:5px}
+  .ty-terminal.ty-terminal-overview .ty-overview-source{max-height:30%;overflow:auto}
+  .ty-terminal.ty-terminal-overview .ty-breadth-notes{max-height:35%;overflow:auto}
+  .ty-terminal.ty-terminal-overview .rw-embedded{height:100%;min-height:0;margin:0;display:flex;flex-direction:column}
+  .ty-terminal.ty-terminal-overview .rw-embedded .rw-grid{flex:1;min-height:0;margin:0;grid-template-columns:minmax(180px,.55fr) minmax(0,1.2fr) minmax(330px,1fr)}
+  .ty-terminal.ty-terminal-overview .rw-embedded .rw-grid>.ty-panel{display:block;max-height:none;height:100%;min-height:0;overflow:auto}
+  .ty-terminal.ty-terminal-overview .rw-embedded .rw-grid>.rw-sectors{padding:6px}
+  .ty-terminal.ty-terminal-overview .rw-embedded .rw-detail{height:100%;max-height:none;padding:8px;overflow:auto}
+  .ty-terminal.ty-terminal-overview .rw-embedded .rw-table-scroll{max-height:55vh}
+  .ty-terminal.ty-terminal-overview .rw-embedded .ty-table td{height:26px;padding-block:2px}
+  .ty-terminal.ty-terminal-overview .rw-embedded .rw-mobile-nav{display:none}
+}
+@media(min-width:1700px) and (min-height:600px){
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr) minmax(224px,.65fr)}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-overview-boards{display:flex}
+  .ty-terminal.ty-terminal-overview .ty-overview-boards>input{margin:3px 6px;min-height:24px;height:24px;width:calc(100% - 12px);font-size:12px}
+  .ty-terminal.ty-terminal-overview .ty-overview-boards th:nth-child(2){width:58px}
+  .ty-terminal.ty-terminal-overview .ty-overview-boards th:last-child{width:76px}
+  .ty-terminal.ty-terminal-overview .ty-overview-boards .ty-text-button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+}
+@media(min-width:1900px) and (min-height:600px){
+  .ty-terminal.ty-terminal-overview .ty-overview-unified{grid-template-areas:"strength strength selector breadth" "strength strength flows ladder" "stocks stocks flows ladder"}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank{display:flex;flex-direction:column;flex:1;min-height:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank>.ty-table-scroll{flex:1;min-height:0;height:auto;max-height:none}
+}
+.ty-terminal .ty-sector-tracking .ty-tracking-table{min-width:470px}
+.ty-terminal .ty-sector-tracking .ty-tracking-table th:first-child{width:26px}
+.ty-terminal .ty-sector-tracking .ty-tracking-table :is(th,td):last-child{text-align:left}
+.ty-terminal .ty-sector-tracking .ty-tracking-table .ty-theme-text{max-width:20ch;width:100%}
+.ty-terminal .ty-overview-boards .ty-table{table-layout:fixed}
+.ty-terminal .ty-overview-boards :is(th,td):not(:first-child){text-align:right;white-space:nowrap}
+.ty-terminal .ty-overview-boards .ty-table td{padding-inline:5px}
+.ty-terminal .ty-overview-boards small{font-size:inherit}
+@media(max-width:1199px),(max-height:599px){
+  .ty-terminal-overview .ty-workspace-switch{flex-wrap:wrap}
+  .ty-terminal-overview .ty-workspace-pane{max-width:100%}
+  .ty-terminal.ty-terminal-overview .rw-embedded .rw-grid{display:block}
+  .ty-terminal.ty-terminal-overview .rw-embedded .rw-mobile-nav{display:flex}
+  .ty-terminal.ty-terminal-overview .rw-embedded .rw-grid>.ty-panel{display:none}
+  .ty-terminal.ty-terminal-overview .rw-embedded[data-pane="板块"] .rw-sectors,
+  .ty-terminal.ty-terminal-overview .rw-embedded[data-pane="列表"] .rw-list,
+  .ty-terminal.ty-terminal-overview .rw-embedded[data-pane="详情"] .rw-desktop-detail{display:block}
+}
+@media(pointer:coarse){.ty-terminal-overview .ty-workspace-switch button,.ty-terminal-overview .ty-tracking-sector{min-height:44px;height:auto}}
+
+@media(min-width:1200px) and (min-height:600px) and (max-height:699px){
+ .ty-terminal.ty-terminal-overview .ty-overview-unified{grid-template-rows:minmax(0,1fr) minmax(0,1fr) minmax(168px,.95fr)}
+ .ty-terminal-overview .ty-workspace-switch{min-height:24px;margin-bottom:3px}
+ .ty-terminal-overview .ty-workspace-switch button{min-height:24px;padding-block:1px}
+}

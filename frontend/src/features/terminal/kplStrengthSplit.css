@@ -1,0 +1,23 @@
+/* The existing strength region: two thirds history, one third current ranking. */
+.ty-overview-strength>.ty-strength-split{display:grid;grid-template-columns:minmax(0,2fr) minmax(210px,1fr);flex:1;min-height:0;min-width:0;overflow:hidden}
+.ty-strength-split>.ty-strength-plot{min-width:0}
+.ty-kpl-top-ten{display:flex;flex-direction:column;min-width:0;min-height:0;padding:0 8px;border-left:1px solid var(--ty-line);overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.ty-kpl-top-ten h3{margin:0;min-height:26px;display:flex;align-items:center;font-size:13px;color:var(--ty-gold)}
+.ty-kpl-top-ten .dir-list-columns{display:flex;justify-content:space-between;align-items:center;min-height:24px;font-size:12px;color:var(--ty-muted);border-bottom:1px solid var(--ty-line)}
+.ty-kpl-top-ten .dir-strength-list{display:flex;flex-direction:column;flex:1;min-height:280px;padding:0}
+.ty-kpl-top-ten .dir-strength-row{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(16px,.55fr) 56px;align-items:center;gap:5px;flex:1;min-height:28px;border-bottom:1px solid var(--ty-line)}
+.ty-kpl-top-ten .dir-strength-row:last-child{border-bottom:0}
+.ty-kpl-top-ten .dir-rank{display:inline-grid;place-items:center;width:20px;height:22px;border-radius:3px;color:var(--ty-muted);font-size:12px}
+.ty-kpl-top-ten .dir-rank-1{background:#cfad6c;color:#151a1c;font-weight:700}
+.ty-kpl-top-ten .dir-rank-2{background:#624f32;color:#f1d39d;font-weight:700}
+.ty-kpl-top-ten .dir-rank-3{background:#3c3528;color:#d7bb82;font-weight:700}
+.ty-kpl-top-ten .dir-strength-name{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ty-kpl-top-ten .dir-strength-track{height:6px;background:#2b3335;border-radius:2px;overflow:hidden}
+.ty-kpl-top-ten .dir-strength-track>i{height:100%;background:linear-gradient(90deg,#736346,#d0ad68);display:block;border-radius:2px}
+.ty-kpl-top-ten .dir-strength-value{font:600 13px 'Segoe UI',sans-serif;font-variant-numeric:tabular-nums;color:#e5c589;text-align:right}
+@media(max-width:700px){
+  .ty-overview-strength>.ty-strength-split{grid-template-columns:minmax(0,1fr);overflow:visible}
+  .ty-terminal.ty-terminal-overview .ty-overview-market-grid{grid-template-rows:660px 300px 320px 260px auto}
+  .ty-strength-split>.ty-strength-plot{min-height:280px}
+  .ty-kpl-top-ten{border-left:0;border-top:1px solid var(--ty-line);overflow:visible}
+}

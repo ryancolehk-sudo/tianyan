@@ -1,0 +1,33 @@
+services:
+  test:
+    profiles: [test]
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend.Dockerfile
+      target: test
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:?Run project.py lock first}
+    environment:
+      JL_DATABASE_URL: postgresql+psycopg://jlpm_migrate:${DB_MIGRATE_PASSWORD:?Required}@db:5432/jiulong
+      JL_TEST_APP_URL: postgresql+psycopg://jlpm_app:${DB_APP_PASSWORD:?Required}@db:5432/jiulong
+      JL_TEST_MAINTENANCE_URL: postgresql+psycopg://jlpm_maintenance:${DB_MAINTENANCE_PASSWORD:?Required}@db:5432/jiulong
+      JL_APP_MODE: demo
+      JL_PUBLIC_ORIGIN: http://127.0.0.1:8080
+      JL_COOKIE_SECURE: 'false'
+      JL_ALLOW_TEST_DATABASE_RESET: 'yes'
+    depends_on:
+      db: {condition: service_healthy}
+  browser:
+    profiles: [test]
+    build:
+      context: .
+      dockerfile: infrastructure/docker/browser.Dockerfile
+      args:
+        PLAYWRIGHT_IMAGE: ${PLAYWRIGHT_IMAGE:?Run project.py lock first}
+    environment:
+      JL_E2E_BASE_URL: http://127.0.0.1:8080
+      JL_E2E_USERNAME: e2e
+    ipc: host
+    # Browser shares the disposable web service's network namespace.
+    # Production origin validation remains strict; no test-only trust bypass.
+    network_mode: service:web

@@ -1,0 +1,16 @@
+{
+ "2026-10-20": {
+  "th": "2026-10-20<br><span>一字:2个  |  封单:5.4亿</span><br><div class='time'><i>9:15</i> | <i>9:20</i> | <i>9:25</i></div>",
+  "t15": "6.1亿",
+  "t20": "5.0亿",
+  "t25": "5.4亿",
+  "table": "<table class=\"table stock\"><td code='600011' class='fd st600011' ><b>样本五号<i><p>低空经济</p><p>3板</p></i></b><br><span>1.6亿</span> | <span>1.5亿</span> | <span>1.8亿</span></td><td code='000012' class='fd st000012' ><b>样本六号<i><p>PCB</p><p>首板</p></i></b><br><span>2万</span> | <span>-</span> | <span>560万</span></td></table>"
+ },
+ "2026-10-19": {
+  "th": "2026-10-19<br><span>一字:0个  |  封单:0</span><br><div class='time'><i>9:15</i> | <i>9:20</i> | <i>9:25</i></div>",
+  "t15": "-",
+  "t20": "0",
+  "t25": "0",
+  "table": "<table class=\"table stock\"><td code='600021' class='fd st600021' ><b>样本七号<i><p>军工</p></i></b><br><span>-</span> | <span>-</span> | <span>-</span></td></table>"
+ }
+}

@@ -1,0 +1,287 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "path": "backend/tests/test_direction_archive.py",
+      "rule": "secret-literal",
+      "sha256": "ef448c752a07e3cfcae2aa34356f78c521a3887c3cff52ccc73bb928f264e5fb",
+      "reason": "Reviewed mocked direction-response redaction sentinel in test_live_failure_diagnostic_is_persisted_without_raw_values; exact fixture only."
+    },
+    {
+      "path": "backend/tests/test_native_setup.py",
+      "rule": "secret-literal",
+      "sha256": "387f3a39faf552b1c19f166910bfedf6fb8886b79360bdc7fa719c9d0e59906d",
+      "reason": "Reviewed temporary native-setup account password shared by two tmp_path demo regressions; exact fixture only."
+    },
+    {
+      "path": "scripts/cloud/tests/test_deploy.py",
+      "rule": "secret-literal",
+      "sha256": "6786324d71483a9ddfa6e2125490379f9f0ebac3d84e880d4a7bca4d4cbc8ac0",
+      "reason": "Reviewed hostile ambient DB_APP_PASSWORD sentinel in mocked deployment-isolation regression; exact fixture only."
+    },
+    {
+      "path": "backend/tests/test_ai_backend.py",
+      "rule": "credential-url",
+      "sha256": "4a53b24813c2f0d8a0a4c32e6225b379b956559c49fcbf57cd2a39edcdbda1a5",
+      "reason": "Reviewed synthetic URL rejection case; credentials must never reach transport."
+    },
+    {
+      "path": "backend/tests/test_ai_backend.py",
+      "rule": "secret-literal",
+      "sha256": "004cad35ddf6b1cd839e58b98950b0caaa71f206fb83ea91f863618de80e88ed",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_ai_backend.py",
+      "rule": "secret-literal",
+      "sha256": "c2b2a3005666362bea552cc5e0ae39ed4f2c81295127ee1227b4cc5e3af2cb41",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_capability_routes.py",
+      "rule": "secret-literal",
+      "sha256": "0535cd236e6d9b67dcb2d850072f5e952c05fc8f672154fb4271c779dba8bc37",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_chatgpt_auth.py",
+      "rule": "secret-literal",
+      "sha256": "b529f69116dc15c0f8d7513a45b6e17181e38e028dc245a487d337349b5bf6f7",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_chatgpt_auth.py",
+      "rule": "secret-literal",
+      "sha256": "e8f8a856d80c6db8db486964edf5dea90a8811e465cebcc561f232f4cc0d3538",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_chatgpt_auth.py",
+      "rule": "secret-literal",
+      "sha256": "f0253f7d0a17145a4d89c8b118dc40c0b1625f3b69e123c13135ea6bbe5dedbd",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_chatgpt_auth_wire.py",
+      "rule": "credential-url",
+      "sha256": "a53c3d4d3b3ebfb8e40c2fb3f8adb35ab2ad39e13efb63507a8a64bd9cde4059",
+      "reason": "Reviewed synthetic URL rejection case; credentials must never reach transport."
+    },
+    {
+      "path": "backend/tests/test_chatgpt_auth_wire.py",
+      "rule": "secret-literal",
+      "sha256": "079c369c6e3c7afbda5893d06abdbfee50b634f99d5b419cd0317e735499a3d3",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_chatgpt_models.py",
+      "rule": "secret-literal",
+      "sha256": "2cbd7352a416f5bdb46783314d12aa8080fd757c2feb110b846ff17a229b7980",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_chatgpt_models.py",
+      "rule": "secret-literal",
+      "sha256": "51d65c4013ded2630669aedd69d931827712b61de1de6985e2a001259b453ed5",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_chatgpt_transport.py",
+      "rule": "secret-literal",
+      "sha256": "64d3bba2ae75de25b72f5192a2cf3e4c23c01862e2de79b31410d78e2c69d16c",
+      "reason": "Reviewed synthetic rejection/redaction test input; exact literal only."
+    },
+    {
+      "path": "backend/tests/test_data_center_monitor.py",
+      "rule": "secret-literal",
+      "sha256": "f5f097103b5a641d0c69febc62ed6ad8554932c9f34880bb3cda3e2ce0805832",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_data_sources.py",
+      "rule": "secret-literal",
+      "sha256": "5c606e00c302306f3fd310c443c8ebaad9c8890a656648bf85da870a4f5ba11f",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_evidence.py",
+      "rule": "credential-url",
+      "sha256": "829e1cd8f322458427ad4dbca8ed5f94e761e0e649e6a49a444958c7b544f6ec",
+      "reason": "Reviewed synthetic URL rejection case; credentials must never reach transport."
+    },
+    {
+      "path": "backend/tests/test_evidence.py",
+      "rule": "secret-literal",
+      "sha256": "0d9b525008f0b4e83c04eb85dc6332845a77d8a6c3bdd8ff2f7a7d768edf12ba",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_foundation.py",
+      "rule": "secret-literal",
+      "sha256": "77210af2f1758a49f5d167d60dd8404361f27d652d269625cc88309f2f0080b1",
+      "reason": "Reviewed synthetic rejection/redaction test input; exact literal only."
+    },
+    {
+      "path": "backend/tests/test_foundation.py",
+      "rule": "secret-literal",
+      "sha256": "ce52b53ea61bee7cd28fa2cf194adc0952b64386f4d625835e84b613825b68f5",
+      "reason": "Reviewed synthetic rejection/redaction test input; exact literal only."
+    },
+    {
+      "path": "backend/tests/test_foundation.py",
+      "rule": "secret-literal",
+      "sha256": "d5497bcb788d26df8debb288228276b180007f0f10597eef54135616be711d51",
+      "reason": "Reviewed synthetic rejection/redaction test input; exact literal only."
+    },
+    {
+      "path": "backend/tests/test_hk_gov_news.py",
+      "rule": "credential-url",
+      "sha256": "59e566111879a51807c6459c93eca32727c00ed733d466b40c53b6f0559ff6ef",
+      "reason": "Reviewed synthetic URL rejection case; credentials must never reach transport."
+    },
+    {
+      "path": "backend/tests/test_hk_gov_news.py",
+      "rule": "credential-url",
+      "sha256": "cab0dde07a00d3e57d6316cb6ad9a7cf8e9680bd48c448c9797d46917a272e54",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_live_quotes.py",
+      "rule": "secret-literal",
+      "sha256": "5cbd0ccae5eef0a92c37fef2b62f4fd82152dcc11537ad96faea9c302f4b18fb",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_live_quotes.py",
+      "rule": "secret-literal",
+      "sha256": "b00ea3a2816e09243c178aab472fd672b1c270eada16caeb9b83bf747a801686",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_mairui_reference.py",
+      "rule": "secret-literal",
+      "sha256": "2e7115cc6cde73a18b47b9c2189d856fec423c85a5683901dc4749842e6234a1",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_market_protocol.py",
+      "rule": "credential-url",
+      "sha256": "29629fae11a1e58bb51a959f0f1972d1750c4e937182c3aceeae5182ffb771b4",
+      "reason": "Reviewed synthetic URL rejection case; credentials must never reach transport."
+    },
+    {
+      "path": "backend/tests/test_news_ai_transport.py",
+      "rule": "credential-url",
+      "sha256": "7b905f1daff122596c393c21c21398a702a9b5123f6149b125a12340c4e43d55",
+      "reason": "Reviewed synthetic URL rejection case; credentials must never reach transport."
+    },
+    {
+      "path": "backend/tests/test_news_ai_transport.py",
+      "rule": "secret-literal",
+      "sha256": "a0d14755d59292464b4bdecef61f643710a0714a54cdc74e2ae5a94059209787",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_observations.py",
+      "rule": "secret-literal",
+      "sha256": "f02631eaacf7d7c299a5c6a9dcd9f7d09d81bb08a8970f4ce3e0c3cd7c496c69",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_research.py",
+      "rule": "secret-literal",
+      "sha256": "7a8b566e615d450b741ff2c7952554bfa63d0c64862137ba9baebca0d99ce9d4",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_review_archives.py",
+      "rule": "secret-literal",
+      "sha256": "f3013b2476d25ffa6b3ff44c4293e926d8a27d37ea2c8d85cbb138eaa84e66a9",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_system_settings.py",
+      "rule": "secret-literal",
+      "sha256": "4117144f3e5063a8a887e58d55cb3a4a9ec5d2efd7113689b17ed776d9ae7982",
+      "reason": "Reviewed synthetic rejection/redaction test input; exact literal only."
+    },
+    {
+      "path": "backend/tests/test_system_settings.py",
+      "rule": "secret-literal",
+      "sha256": "b231d085cf58548f69b389963c6fcf8f76d4660927db1714776077241546c0e7",
+      "reason": "Reviewed synthetic rejection/redaction test input; exact literal only."
+    },
+    {
+      "path": "backend/tests/test_system_updates.py",
+      "rule": "credential-url",
+      "sha256": "00b964b26726165b9ba289661fd33e29f4ae68c3224242c65e20b1f50636a1db",
+      "reason": "Reviewed synthetic URL rejection case; credentials must never reach transport."
+    },
+    {
+      "path": "backend/tests/test_tdx_data.py",
+      "rule": "secret-literal",
+      "sha256": "1eedbeb0841cadee705510917a307bd53007fa1c3c119cb9e29ef85dd8ae7a87",
+      "reason": "Reviewed synthetic rejection/redaction test input; exact literal only."
+    },
+    {
+      "path": "backend/tests/test_tomorrow_backend.py",
+      "rule": "secret-literal",
+      "sha256": "ea0b2933b5b5261262ecb0fc6d9341b71780d39ce59c8b25eff5e2a20255cc7a",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_tushare.py",
+      "rule": "secret-literal",
+      "sha256": "56ee193246bb4e305c5b8aa583b3d84f12604ac9202df56dac85238997f31ed9",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "backend/tests/test_validations.py",
+      "rule": "secret-literal",
+      "sha256": "3ba54196409a9f0d9c8d875661824599736004eb4c448b7391866607c46ff2c3",
+      "reason": "Reviewed synthetic fixture: temporary test account, mocked provider, or redaction/rejection sentinel."
+    },
+    {
+      "path": "frontend/tests/e2e/chart-trading-time.spec.ts",
+      "rule": "secret-literal",
+      "sha256": "0274b5ab1e96c9dec77d88cb2315575218105592affce5bb9b9727885996e7fe",
+      "reason": "Reviewed route.fulfill synthetic session fixture; no real browser session."
+    },
+    {
+      "path": "frontend/tests/e2e/daily-history.spec.ts",
+      "rule": "secret-literal",
+      "sha256": "0274b5ab1e96c9dec77d88cb2315575218105592affce5bb9b9727885996e7fe",
+      "reason": "Reviewed route.fulfill synthetic session fixture; no real browser session."
+    },
+    {
+      "path": "frontend/tests/e2e/homepage-layout.spec.ts",
+      "rule": "secret-literal",
+      "sha256": "0274b5ab1e96c9dec77d88cb2315575218105592affce5bb9b9727885996e7fe",
+      "reason": "Reviewed route.fulfill synthetic session fixture; no real browser session."
+    },
+    {
+      "path": "frontend/tests/e2e/minute-latest.spec.ts",
+      "rule": "secret-literal",
+      "sha256": "0274b5ab1e96c9dec77d88cb2315575218105592affce5bb9b9727885996e7fe",
+      "reason": "Reviewed route.fulfill synthetic session fixture; no real browser session."
+    },
+    {
+      "path": "frontend/tests/e2e/minute-refresh.spec.ts",
+      "rule": "secret-literal",
+      "sha256": "0274b5ab1e96c9dec77d88cb2315575218105592affce5bb9b9727885996e7fe",
+      "reason": "Reviewed route.fulfill synthetic session fixture; no real browser session."
+    },
+    {
+      "path": "frontend/tests/e2e/persistent-workspace.spec.ts",
+      "rule": "secret-literal",
+      "sha256": "42277f220f82b73788fd50cdff94490d0d5db5cd6be26676174c799ed944b565",
+      "reason": "Reviewed route.fulfill synthetic session fixture; no real browser session."
+    },
+    {
+      "path": "scripts/tests/test_source_distribution.py",
+      "rule": "secret-literal",
+      "sha256": "b3cc0475bb78a5026098858e9889acf666d31062d513d303314eca31d36e72f2",
+      "reason": "Exact offline fixture for verifying that Compose discards ambient credentials."
+    }
+  ]
+}

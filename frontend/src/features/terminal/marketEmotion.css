@@ -1,0 +1,39 @@
+.ty-overview-strength>.ty-strength-split.ty-market-composition {
+  grid-template-columns: clamp(105px, 22.5%, 220px) minmax(0, 1fr) clamp(164px, 25%, 235px);
+}
+.ty-market-center{display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1.15fr);min-width:0;min-height:0}
+.ty-market-center>.ty-strength-plot{border-top:1px solid var(--ty-line)}
+.ty-market-center .ty-fund-legend>strong{flex-shrink:0;white-space:nowrap;font-size:11px;font-weight:600}
+.ty-market-distribution{display:flex;flex-direction:column;min-height:0;min-width:0;padding:0 5px;border-right:1px solid var(--ty-line)}
+.ty-market-distribution h3,.ty-emotion-heading h3{font-size:12px;margin:0;line-height:24px;white-space:nowrap}
+.ty-distribution-bars{flex:1;display:flex;flex-direction:column;min-height:0}
+.ty-distribution-row{display:grid;grid-template-columns:38px minmax(0,1fr) 26px;gap:3px;align-items:center;flex:1;font-size:10px;min-height:15px;font-variant-numeric:tabular-nums}
+.ty-distribution-row>span{color:var(--ty-muted);text-align:right;white-space:nowrap}
+.ty-distribution-row>div{height:65%;max-height:16px;min-height:4px}
+.ty-distribution-row i{display:block;height:100%}
+.ty-distribution-row b{font-weight:400;text-align:right}
+.ty-distribution-count{font-size:10px;color:var(--ty-muted);line-height:20px;text-align:right}
+.ty-market-emotion{display:flex;flex-direction:column;min-width:0;min-height:0;padding:0 6px}
+.ty-emotion-heading{display:flex;justify-content:space-between;align-items:center;gap:4px;flex-shrink:0}
+.ty-emotion-heading>div{display:flex;gap:8px;font-size:11px;white-space:nowrap}
+.ty-emotion-heading i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px}
+.ty-market-emotion>.ty-chart{position:relative;flex:1;min-height:0;padding:0}
+.ty-market-emotion>.ty-chart>svg{height:100%;min-height:0;max-height:none}
+.ty-emotion-band text{font-size:10px}
+.ty-emotion-empty{position:absolute;inset:45% 0 auto;text-align:center;color:var(--ty-muted);font-size:12px;pointer-events:none}
+.ty-market-composition .ty-kpl-top-ten{padding:0 5px}
+.ty-market-composition .dir-strength-row {
+  --strength-value-width: 47px;
+  --strength-column-gap: 3px;
+  /* Start the bar at the row midpoint, leaving space for the value at right. */
+  grid-template-columns: 18px minmax(0, 1fr) minmax(0, calc(50% - var(--strength-value-width) - var(--strength-column-gap))) var(--strength-value-width);
+  gap: var(--strength-column-gap);
+}
+.ty-market-composition .dir-strength-value{font-size:12px}
+.ty-market-composition .dir-strength-name{font-size:11px}
+.ty-terminal.ty-terminal-overview .ty-market-center .ty-strength-plot>.ty-fund-legend{max-height:20px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;font-size:11px}
+@media(max-width:700px){
+ /* Let both content rows and the source disclosure determine the panel height. */
+ .ty-overview-strength>.ty-strength-split.ty-market-composition{flex:none;grid-template-columns:clamp(105px,30%,150px) minmax(0,1fr);grid-template-rows:360px auto}
+ .ty-market-composition>.ty-kpl-top-ten{grid-column:1/-1}
+}

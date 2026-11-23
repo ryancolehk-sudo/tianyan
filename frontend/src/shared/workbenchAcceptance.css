@@ -1,0 +1,11 @@
+.ty-acceptance-export {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  z-index: 10000;
+  display: inline-flex;
+  max-width: 280px;
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.ty-acceptance-export[hidden] { display: none !important; }

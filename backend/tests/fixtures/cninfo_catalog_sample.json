@@ -1,0 +1,11 @@
+{
+  "stockList": [
+    {"category": "A股", "code": "002724", "orgId": "9900023121", "pinyin": "hyw", "zwjc": "海洋王"},
+    {"category": "A股", "code": "000001", "orgId": "gssz0000001", "pinyin": "payh", "zwjc": "平安银行"},
+    {"category": "A股", "code": "600000", "orgId": "gssh0600000", "pinyin": "pfyh", "zwjc": "浦发银行"},
+    {"category": "A股", "code": "688001", "orgId": "gssh0688001", "pinyin": "htrc", "zwjc": "华兴源创"},
+    {"category": "A股", "code": "920001", "orgId": "bj920001", "pinyin": "bjcs", "zwjc": "北交样本"},
+    {"category": "B股", "code": "200002", "orgId": "gssz0000002", "pinyin": "wkb", "zwjc": "万科B"},
+    {"category": "CDR", "code": "689009", "orgId": "gssh0689009", "pinyin": "jhgs", "zwjc": "九号公司"}
+  ]
+}

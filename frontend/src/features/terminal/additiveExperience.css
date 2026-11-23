@@ -1,0 +1,24 @@
+/* Additive controls; original features are retained. Overview spacing lives in OverviewDensity.css. */
+.rw-extension-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--ty-line)}
+.rw-extension-head h2{font-size:18px;margin:0}.rw-extension-head p{color:var(--ty-muted);margin:0}.rw-extension-head a{margin-left:auto}
+.rw-root{margin-top:8px;scroll-margin-top:20px}.rw-sectors{min-width:0}.rw-sectors .ty-table{min-width:0;width:100%;table-layout:fixed}.rw-sectors .ty-table th:first-child{width:46%}.rw-sectors .ty-table td{padding:4px}.rw-sectors button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ty-terminal .rw-drawer:not([open]){display:none}
+.rw-root .ty-number-change,.ty-observation-ranking .ty-number-change{animation:ty-number-emphasis 120ms ease-out}
+.dr-additive[open]>:not(summary){animation:ty-menu-in 160ms ease-out}
+@keyframes ty-number-emphasis{from{opacity:.65}to{opacity:1}}
+@keyframes ty-menu-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+.ty-date-context{padding:10px 12px;border:1px solid var(--ty-gold);margin:8px 0;display:flex;gap:12px;flex-wrap:wrap}.ty-date-context details{width:100%}
+.ty-rank-update:empty{display:none}.ty-rank-update{padding:4px 10px}.ty-auction-additions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px}
+.ty-auction-additions [aria-pressed=true]{color:var(--ty-gold);border-color:var(--ty-gold)}
+.ty-terminal.ty-terminal-auction .ty-auction-days{overflow-x:auto;width:100%;box-sizing:border-box;grid-template-columns:repeat(4,minmax(210px,1fr))}
+.ty-terminal-auction .ty-auction-day h3,.ty-terminal-auction .ty-auction-node-head{position:sticky;top:0;background:var(--ui-surface,#101c25);z-index:1}
+.auction-ranking-scroll{max-height:360px;overflow:auto}.ty-observation-ranking{margin-top:12px}
+.dr-additive{margin-top:14px;border-top:1px solid var(--ui-border,#33434b);padding-top:10px;min-width:0}.dr-additive>summary{cursor:pointer;color:var(--ty-gold,#d9af58)}
+.dr-additive .dr-comparison-scroll{max-height:340px;overflow:auto}.dr-additive .dr-plan-scenario{padding:10px;border:1px solid var(--ui-border,#33434b);margin:8px 0}.dr-additive .dr-comparison{min-width:0}.dr-additive select{max-width:100%}
+.rw-root,.ty-observation-ranking,.dr-additive{font-variant-numeric:tabular-nums}.rw-root button,.ty-auction-additions button,.ty-terminal .ty-text-button{transition:background-color 120ms,color 120ms,border-color 120ms}
+.rw-root :focus-visible,.ty-auction-additions :focus-visible,.dr-additive :focus-visible{outline:2px solid var(--ty-gold,#d9af58);outline-offset:2px}
+.rw-root .ty-table [data-current],.ty-observation-ranking [data-current]{background:#d9af5817}
+.rw-root .ty-table th,.ty-observation-ranking th{text-align:right}.rw-root .ty-table th:first-child,.ty-observation-ranking th:first-child{text-align:left}
+.rw-root .ty-table td,.ty-observation-ranking td{font-variant-numeric:tabular-nums}.ty-observation-ranking td{min-height:32px}.ty-observation-ranking td:last-child{text-align:right}
+@media(max-width:1439px){.ty-terminal.ty-terminal-auction .ty-auction-days{display:flex}.ty-terminal.ty-terminal-auction .ty-auction-day{flex:0 0 calc(50% - 2.5px);min-width:280px}}
+@media(prefers-reduced-motion:reduce){.rw-root *,.dr-additive *,.ty-auction-additions *,.ty-terminal .ty-text-button{animation:none!important;transition:none!important}}

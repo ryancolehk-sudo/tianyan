@@ -1,0 +1,68 @@
+.cg-continue{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#121212;color:#fff;border:1px solid #494949;border-radius:6px;min-height:44px;padding:10px 18px;font:600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;text-align:center}
+.cg-continue:hover:not(:disabled){background:#292929;color:#fff;border-color:#777}
+.cg-continue:disabled{opacity:.45;cursor:not-allowed}
+.cg-continue:focus-visible,.cg-login button:focus-visible{outline:2px solid #a77d36;outline-offset:3px}
+.cg-login{margin-top:22px}
+.cg-login-divider{display:flex;align-items:center;gap:12px;color:#7f8995;font-size:11px;margin-bottom:16px}
+.cg-login-divider:before,.cg-login-divider:after{content:'';height:1px;flex:1;background:#dce1e6}
+.cg-login .cg-continue{width:100%}
+.cg-login-note,.cg-login-status,.cg-callback{font-size:11px;line-height:1.7;color:#718095;margin:10px 0 0;overflow-wrap:anywhere}
+.cg-login-status{padding:8px 10px;background:#f2f4f6;border-radius:4px;color:#586575}
+.cg-login-error{display:flex;gap:8px;align-items:center;margin-top:10px;color:#a93d2c;font-size:11px;line-height:1.6}
+.cg-login-error button{background:transparent;color:inherit;white-space:nowrap;border:1px solid #cba79e;border-radius:4px;padding:4px 8px;cursor:pointer}
+.dc-live .cg-card{padding:13px 16px}
+.cg-card .dc-panel-heading{margin-bottom:10px}
+.dc-live .cg-card .cg-continue{background:#121212;color:#fff;border-color:#566570;font-size:13px}
+.dc-live .cg-card .cg-continue:hover:not(:disabled){background:#292929;color:#fff;border-color:#999}
+.cg-intro{font-size:12px;color:#9db6c7;line-height:1.7;margin-bottom:12px!important}
+.cg-intro strong{font-weight:550;color:#e6eaf0}
+.cg-account-picker{display:flex;gap:10px;align-items:center;margin:10px 0}
+.cg-account-picker label{font-size:12px;white-space:nowrap;color:#b7cbda}
+.cg-account-picker select{flex:1;font-size:12px}
+.cg-account-details{background:#0b29365c;border:1px solid #224858;border-radius:6px;padding:11px 12px;margin:10px 0;min-width:0}
+.cg-account-identity{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cg-account-identity strong{font-size:14px;font-weight:600;overflow-wrap:anywhere;min-width:0}
+.cg-identity-caption{font-size:10px;color:#89a7b9;margin:3px 0 10px!important;overflow-wrap:anywhere}
+.cg-state-list{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:11px;margin:10px 0;padding:0}
+.cg-state-list>div{display:flex;gap:7px;justify-content:space-between;min-width:0}
+.cg-state-list dt{color:#93b0c3;white-space:nowrap}
+.cg-state-list dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.cg-model-label{display:block;font-size:12px;margin-bottom:5px;color:#c2d5e2}
+.cg-model-fields{display:flex;gap:8px;align-items:stretch}
+.cg-model-fields input{min-width:0;flex:1;font-size:12px}
+.cg-model-fields button{font-size:11px;flex-shrink:0}
+.dc-live .cg-model-options{margin-top:7px;min-height:32px;font-size:11px}
+.cg-model-actions{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}
+.cg-model-actions button{font-size:12px;min-height:34px}
+.cg-selection{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #234656;padding-top:10px;margin-top:11px;font-size:12px}
+.cg-selection>div{min-width:0}
+.cg-selection small{font-size:10px;color:#93b0c3;display:block;margin-top:3px}
+.cg-plan-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 0 0!important;font-size:11px;color:#91b2c6}
+.cg-plan-line strong{color:#f2cc78;font-size:11px;font-weight:550}
+.dc-live a.cg-usage{display:inline-flex;padding:4px 0;color:#9fd9ef;font-size:11px;text-decoration:underline;text-underline-offset:3px}
+.dc-live a.cg-usage-primary{padding:8px 13px;border:1px solid #ffdb85;background:#efc266;color:#171b1a;border-radius:5px;font-size:12px;text-decoration:none;font-weight:650;margin-top:7px}
+.cg-explanation{font-size:10px;line-height:1.65;color:#89a7bb;margin:7px 0 0!important}
+.cg-account-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.cg-account-actions button{font-size:11px}
+.cg-empty-action{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cg-status-note{font-size:11px;line-height:1.65;color:#c7ac76;margin:9px 0 0!important;overflow-wrap:anywhere}
+.cg-feedback,.cg-error{font-size:11px;line-height:1.65;border:1px solid #36576a;border-radius:5px;padding:9px 11px;margin-top:10px;overflow-wrap:anywhere}
+.cg-feedback{background:#163d3440;color:#9bdfc3}
+.cg-error{background:#57352b35;border-color:#9c6250;color:#ffbc9e}
+.cg-error-head{font-weight:600;color:#ffce92}
+.cg-confirm{font-size:11px;line-height:1.7;border:1px solid #8c7042;background:#3a352943;border-radius:5px;padding:9px 11px;margin-top:10px}
+.cg-confirm-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.cg-confirm-actions button{font-size:11px}
+.cg-welcome{max-width:440px;width:calc(100% - 32px);border:1px solid #927547;border-radius:12px;padding:26px;background:#06212b;color:#eef3f5;box-shadow:0 16px 70px #0008;font:14px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif}
+.cg-welcome::backdrop{background:#000a}
+.cg-welcome h2{font-size:22px;line-height:1.35;margin:0 0 15px;color:#f5d78b}
+.cg-welcome p{margin:10px 0;color:#b6cbd7;font-size:12px}
+.cg-welcome a{color:#a0daef;text-underline-offset:3px}
+.cg-welcome button{display:block;width:100%;margin-top:20px;border:1px solid #f3cf7b;background:#efc36a;color:#171b1a;border-radius:5px;min-height:42px;font-weight:600;cursor:pointer}
+.cg-welcome button:disabled{opacity:.5;cursor:wait}
+.cg-welcome [role=alert]{color:#ffb4a0}
+.dc-live .cg-welcome h2{margin:0 0 15px}
+.dc-live .cg-welcome p{margin:10px 0}
+.dc-live .cg-welcome button{background:#efc36a;color:#171b1a;border-color:#f3cf7b}
+.dc-live .cg-welcome button:hover:not(:disabled){background:#ffdc80;color:#171b1a}
+@media(max-width:600px){.cg-state-list{grid-template-columns:1fr}.cg-model-fields{flex-wrap:wrap}.cg-model-fields input{flex-basis:100%}.cg-model-fields button{flex:1}.cg-card .dc-panel-heading{flex-wrap:wrap}.dc-live .cg-card{padding:12px}.cg-model-actions{display:grid;grid-template-columns:1fr 1fr}.cg-login{margin-top:18px}}

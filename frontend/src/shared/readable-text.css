@@ -1,0 +1,14 @@
+.readable-text{min-width:0;max-width:100%;cursor:help;vertical-align:middle}
+.readable-text-value{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.readable-text:focus-visible{outline:2px solid var(--ui-focus,#f5d99a);outline-offset:2px}
+.readable-text-hint{position:fixed;z-index:10030;box-sizing:border-box;max-width:min(340px,calc(100vw - 24px));max-height:50dvh;overflow:auto;padding:10px 12px;border:0;border-radius:8px;background:var(--ui-raised,#172631);color:var(--ui-ink,#e7eef4);box-shadow:0 8px 24px #0009;font:12px/1.6 var(--ui-font,'Segoe UI',sans-serif);white-space:pre-line;overflow-wrap:anywhere;text-align:left}
+.readable-text-hint[data-state=open]{animation:text-hint-enter 180ms cubic-bezier(.16,1,.3,1) both}
+.readable-text-hint[data-state=closing]{animation:text-hint-exit 120ms ease-in both;pointer-events:none}
+@keyframes text-hint-enter{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes text-hint-exit{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-4px)}}
+.ty-terminal .ty-stock-label{display:block;max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ty-terminal .ty-stock-name{max-width:100%;min-width:0}
+.ty-terminal .ty-sort-direction{display:inline-block;margin-left:4px;vertical-align:-1px;color:var(--ui-accent,#e4c481)}
+@media(prefers-reduced-motion:reduce){.readable-text-hint[data-state=open]{animation:text-hint-fade-in 120ms ease-out both}.readable-text-hint[data-state=closing]{animation:text-hint-fade-out 120ms ease-in both}}
+@keyframes text-hint-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes text-hint-fade-out{from{opacity:1}to{opacity:0}}

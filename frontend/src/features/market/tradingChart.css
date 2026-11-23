@@ -1,0 +1,42 @@
+.trading-chart-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:10px 0;font-size:11px}
+.trading-chart-actions button,.trading-chart-actions select{font-size:11px;padding:5px 8px;min-height:30px}
+.trading-chart-actions label{display:flex;align-items:center;gap:5px}
+.trading-chart-actions input{accent-color:var(--blue,#3370ff)}
+.trading-chart-actions .chart-window-count{margin-left:auto;color:var(--muted,#646a73);font-variant-numeric:tabular-nums}
+.trading-chart-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;font:11px Consolas,'Microsoft YaHei UI',monospace;font-variant-numeric:tabular-nums}
+.trading-chart-legend .chart-ma5{color:#a66d13}.trading-chart-legend .chart-ma10{color:#7754ad}.trading-chart-legend .chart-ma20{color:#167b88}
+.trading-chart-svg{display:block;width:100%;height:auto;touch-action:pan-y;user-select:none;cursor:crosshair;outline:none}
+.trading-chart-svg:focus-visible,.trading-chart-actions button:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:2px}
+.trading-chart-svg.chart-panning{cursor:grabbing}.trading-chart-svg text{font-family:Consolas,'Microsoft YaHei UI',monospace;font-variant-numeric:tabular-nums}
+.history-chart-panel:fullscreen{background:#fff;padding:20px;overflow:auto;box-sizing:border-box;width:100%;height:100%}
+.history-chart-panel:fullscreen .trading-chart-svg{max-height:65vh}
+.chart-calculation-note{font-size:11px;line-height:1.6;color:var(--muted,#646a73);margin:8px 0}
+@media(max-width:600px){.trading-chart-actions{gap:5px}.trading-chart-actions .chart-window-count{flex-basis:100%;margin:0}.minute-chart-panel .trading-chart-svg{min-height:250px}.trading-chart-legend{gap:8px}}
+
+/* Keep the price/volume workspace visible; provenance remains one click away. */
+.minute-chart-panel{position:relative;margin-top:3px;padding:5px 0;border:0;border-radius:0}
+.minute-chart-panel>.chart-fullscreen{position:absolute;right:0;top:4px;z-index:1;padding:3px 7px;min-height:25px;font-size:10px;background:#fff;border:1px solid var(--line,#e1ebf7);border-radius:3px}
+.minute-chart-panel .history-chart-toolbar{padding-right:48px;gap:4px 8px;font-size:10px;min-height:26px}
+.minute-chart-panel .history-chart-toolbar>span{flex:0 1 auto;font-size:10px}
+.minute-chart-panel .history-chart-toolbar label{font-size:10px;gap:4px}
+.minute-chart-panel .history-chart-toolbar input,.minute-chart-panel .history-chart-toolbar select{font-size:10px;padding:3px 5px;min-height:24px;max-width:180px}
+.minute-chart-panel .history-chart-toolbar button{font-size:10px;padding:3px 5px;min-height:24px}
+.minute-chart-panel .chart-compact-status{font-size:10px;line-height:1.5;margin:3px 0;gap:4px}
+.minute-chart-panel .chart-compact-status>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.minute-chart-panel .chart-compact-status button{padding:2px 5px;min-height:23px;font-size:10px}
+.minute-chart-panel .candle-readout{font-size:10px;gap:3px 8px;margin-top:3px;line-height:1.5}
+.minute-chart-panel .trading-chart-actions{gap:4px;margin:4px 0}
+.minute-chart-panel .trading-chart-actions button,.minute-chart-panel .trading-chart-actions select{min-height:23px;padding:2px 5px;font-size:10px}
+.minute-chart-panel .trading-chart-actions label{font-size:10px}
+.minute-chart-panel .chart-window-count{font-size:9px}
+.minute-chart-panel .trading-chart-legend{gap:8px;font-size:10px;margin:3px 0}
+.minute-chart-panel .trading-chart-svg{height:clamp(240px,22vw,310px);min-height:0;margin:3px 0}
+.minute-chart-panel .trading-chart-svg.chart-with-macd{height:clamp(285px,25vw,355px)}
+.chart-data-details{font-size:10px;line-height:1.6;color:var(--muted,#646a73);margin-top:3px}
+.chart-data-details>summary{cursor:pointer;color:var(--blue,#3370ff);padding:3px 0;width:fit-content}
+.chart-data-details>summary:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:2px}
+.chart-data-details .feature-note,.chart-data-details .chart-calculation-note{font-size:10px;margin:6px 0}
+.minute-chart-panel:fullscreen{padding:14px;border:0}
+.minute-chart-panel:fullscreen .chart-fullscreen{right:14px;top:14px}
+.minute-chart-panel:fullscreen .trading-chart-svg{height:60vh;max-height:70vh}
+@media(max-width:600px){.minute-chart-panel .history-chart-toolbar{padding-right:40px}.minute-chart-panel .history-chart-toolbar label{flex:1 1 auto}.minute-chart-panel .history-chart-toolbar input,.minute-chart-panel .history-chart-toolbar select{max-width:150px}.minute-chart-panel .candle-readout strong{flex-basis:auto}.minute-chart-panel .trading-chart-svg{height:250px}.minute-chart-panel .trading-chart-svg.chart-with-macd{height:300px}}

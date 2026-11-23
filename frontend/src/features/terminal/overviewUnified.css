@@ -1,0 +1,182 @@
+/* Overview owns its layout; the dedicated research and funds views stay intact. */
+.ty-terminal.ty-terminal-overview .ty-overview-unified{display:grid;gap:12px;min-width:0;margin-top:12px}
+.ty-terminal.ty-terminal-overview .ty-overview-market-row{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(320px,1fr);gap:12px;align-items:stretch}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel{min-width:0}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-head{min-height:44px;flex-wrap:wrap;gap:6px 12px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-head h2{font-size:16px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-subtitle,.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-action{font-size:12px;color:#aabcc9}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-chart-workspace{grid-template-columns:225px minmax(0,1fr);gap:10px;padding:10px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-filter{font-size:13px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-heading{font-size:12px;color:#aabcc9}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-search{font-size:13px;min-height:34px;margin:8px 0}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-list{max-height:180px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-row{min-height:36px;line-height:18px;grid-template-columns:16px minmax(0,1fr) auto;gap:5px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-row b,.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-footer{font-size:12px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-filter>details{display:none}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-fund-legend{min-height:34px;font-size:12px;padding:4px 8px;align-content:start;max-height:64px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-fund-legend button{font-size:12px;min-height:24px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-chart svg{min-height:0}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-funds-chart svg{height:240px;max-height:none}
+.ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel{display:flex;flex-direction:column}
+.ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel>.ty-chart{flex:1;display:flex;align-items:center;min-height:250px}
+.ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel .ty-breadth-notes{margin-top:auto;font-size:12px}
+.ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel .ty-panel-label{flex-wrap:wrap}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-source{border-top:1px solid #29414e;display:flex;justify-content:space-between;align-items:start;gap:8px;padding:9px 12px;font-size:12px;color:#aabcc9;flex-wrap:wrap}
+.ty-terminal.ty-terminal-overview .ty-overview-source details{max-width:65ch}
+.ty-terminal.ty-terminal-overview .ty-overview-source summary,.ty-terminal.ty-terminal-overview .ty-overview-ai summary{cursor:pointer;color:#e4c481}
+.ty-terminal.ty-terminal-overview .ty-overview-source p{font-size:13px;line-height:1.6;margin:8px 0}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-warning{color:#e4c481;font-size:13px;margin:0;padding:8px 12px;border-top:1px solid #29414e}
+.ty-terminal.ty-terminal-overview .ty-overview-tabs{display:flex;gap:4px}
+.ty-terminal.ty-terminal-overview .ty-overview-tabs button{padding:6px 18px;min-height:32px;background:transparent;border:1px solid #29414e;border-radius:3px;color:#e7eef4;font:inherit;cursor:pointer}
+.ty-terminal.ty-terminal-overview .ty-overview-tabs button[aria-pressed=true]{background:#e4c48115;border-color:#927e4b;color:#f5d99a}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-body{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(320px,1fr);min-width:0}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-plot{padding:8px 12px;min-width:0}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank{border-left:1px solid #29414e;padding:0 12px;min-width:0}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank>.ty-table-scroll{max-height:252px;overflow:auto}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank .ty-table{font-size:13px;width:100%}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank th{position:sticky;top:0;background:#172631;z-index:1}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank td{height:34px}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank input[type=checkbox]{accent-color:#e4c481;width:15px;height:15px;cursor:pointer}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank .ty-text-button{white-space:normal;text-align:left}
+.ty-terminal.ty-terminal-overview .ty-overview-stock-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(250px,.75fr);gap:12px}
+.ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-mini-ladder-body{display:block}
+.ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-mini-ladder-footer{justify-content:flex-end}
+.ty-terminal.ty-terminal-overview .ty-overview-ai{border:1px solid #29414e;padding:12px;background:#111e27}
+.ty-terminal.ty-terminal-overview .ty-overview-ai>summary{font-size:14px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified :is(button,input,summary):focus-visible{outline:2px solid #f5d99a;outline-offset:2px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified :is(button,summary):hover{color:#f5d99a}
+.ty-terminal.ty-terminal-overview .ty-overview-unified input::placeholder{color:#aabcc9}
+.ty-terminal.ty-terminal-overview .ty-overview-unified input{caret-color:#f5d99a}
+@media(max-width:1250px){
+  .ty-terminal.ty-terminal-overview .ty-overview-market-row{grid-template-columns:minmax(0,1fr)}
+  .ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel>.ty-chart{min-height:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel svg{height:220px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-mini-ladder{grid-column:1/-1}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-mini-ladder-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-body{grid-template-columns:minmax(0,1fr) minmax(310px,.8fr)}
+}
+@media(max-width:700px){
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-chart-workspace,.ty-terminal.ty-terminal-overview .ty-overview-funds-body,.ty-terminal.ty-terminal-overview .ty-overview-stock-row{grid-template-columns:minmax(0,1fr)}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-filter{border-right:0;border-bottom:1px solid #29414e;padding-right:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-list{max-height:176px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-row{min-height:44px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-funds-chart svg{height:220px;min-height:220px}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank{border-left:0;border-top:1px solid #29414e}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-mini-ladder-body{grid-template-columns:minmax(0,1fr)}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified :is(.ty-overview-tabs button,.ty-strength-footer button,.ty-text-button){min-height:44px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-fund-legend{max-height:100px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-source{line-height:1.6}
+}
+
+.ty-terminal.ty-terminal-overview .ty-overview-market-row>.ty-panel{grid-column:auto;grid-row:auto}
+.ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-panel{grid-column:auto;grid-row:auto}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-chart-grid text{font-size:14px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-head h2{font-size:16px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-table td{padding-block:5px;height:34px;box-sizing:border-box}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-breadth-panel svg{height:260px;max-height:none}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-breadth-panel .ty-panel-subtitle{font-size:12px}
+@media(min-width:701px){.ty-terminal.ty-terminal-overview .ty-overview-funds-rank .ty-text-button{min-height:28px;padding:0}}
+@media(min-width:701px) and (max-width:1250px){.ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-mini-ladder{grid-column:1/-1}}
+
+/* A monitoring screen, not stacked presentation charts. */
+.ty-terminal.ty-terminal-overview .ty-overview-flow-row{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(320px,1fr);gap:6px;align-items:stretch}
+.ty-terminal.ty-terminal-overview .ty-overview-flow-row>.ty-mini-ladder{grid-column:auto;grid-row:auto}
+.ty-terminal .ty-rank-controls{display:flex;align-items:center;gap:3px;min-width:0}
+.ty-terminal .ty-rank-controls input{width:78px;min-width:0}
+.ty-terminal .ty-rank-controls select{width:68px}
+.ty-terminal .ty-rank-controls :is(input,select,button){font-size:12px;min-height:24px;height:24px;padding:1px 3px}
+.ty-terminal .ty-rank-controls button{display:inline-flex;align-items:center;justify-content:center;min-width:20px}
+.ty-terminal .ty-rank-count{white-space:nowrap;font-variant-numeric:tabular-nums;font-size:12px}
+.ty-terminal .ty-rank-sort{display:inline-flex;gap:2px;align-items:center;font:inherit;color:inherit;background:transparent;border:0;padding:0;min-height:20px;white-space:nowrap}
+.ty-terminal .ty-rank-table th:nth-child(n+3) .ty-rank-sort{justify-content:flex-end}
+@media(pointer:coarse){.ty-terminal .ty-rank-controls :is(input,select,button),.ty-terminal .ty-rank-sort{min-height:44px;height:auto}.ty-terminal .ty-rank-controls button{min-width:44px}}
+@media(min-width:1200px){
+  .ty-terminal.ty-terminal-overview .ty-overview-unified{gap:6px;margin-top:6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-market-row{grid-template-columns:minmax(0,1.85fr) minmax(320px,1fr);gap:6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row{grid-template-columns:repeat(2,minmax(0,calc(278px + 20ch))) minmax(250px,1fr);gap:6px;font-size:13px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-head{min-height:24px;padding:1px 8px;gap:4px 8px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-head :is(h2,h3){font-size:14px;line-height:20px;margin:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-label{flex-direction:row;align-items:center;flex-wrap:nowrap}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-chart-workspace{grid-template-columns:210px minmax(0,1fr);padding:4px 6px;gap:6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-heading{display:none}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-search{min-height:24px;height:24px;padding:2px 6px;margin:2px 0 4px;font-size:12px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-list{max-height:120px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-row{min-height:24px;line-height:20px;padding:1px 2px;gap:3px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-row>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-footer{padding:2px 0;min-height:20px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-footer button{min-height:20px;padding:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-fund-legend{min-height:20px;max-height:40px;padding:0 4px;gap:0 8px;line-height:20px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-fund-legend button{min-height:20px;padding:0;line-height:20px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-funds-chart{padding:0 4px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-funds-chart svg{height:144px;min-height:144px;max-height:144px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-chart-grid text{font-size:12px}
+  .ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel>.ty-chart{min-height:144px;padding:0 4px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-breadth-panel svg{height:144px;min-height:144px;max-height:144px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-breadth-panel .ty-panel-label{flex:1 1 auto;flex-wrap:wrap;gap:2px 6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-breadth-panel .ty-panel-head{gap:0 6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-breadth-notes>summary{min-height:20px;padding:2px 6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-source{padding:0 6px;min-height:20px;line-height:20px;gap:0 6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-warning{padding:2px 6px;font-size:12px;line-height:18px}
+  .ty-terminal.ty-terminal-overview .ty-overview-tabs button{min-height:24px;padding:2px 10px}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-body{grid-template-columns:minmax(0,1fr) minmax(270px,340px)}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-plot{padding:3px 4px}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank{padding:2px 6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank>.ty-table-scroll{height:144px;max-height:144px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-table{font-size:13px;line-height:20px;table-layout:fixed}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-table :is(th,td){height:24px;padding:1px 6px;line-height:20px;box-sizing:border-box}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-table :is(.ty-stock-name,.ty-text-button){min-height:20px;padding:0;line-height:20px;font-size:13px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-table th{font-size:12px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-rank-table th:first-child{width:28px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-rank-table th:nth-child(2){width:86px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-rank-table :is(th,td):nth-child(3){width:76px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-rank-table :is(th,td):nth-child(4){width:72px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-rank-table .ty-theme-text{max-width:min(100%,20ch)}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank th:first-child{width:34px}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank th:nth-child(3){width:64px}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank th:nth-child(4){width:68px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-panel{height:248px;display:flex;flex-direction:column}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-rank-panel .ty-panel-head{height:28px;min-height:28px;padding:1px 6px;flex-wrap:nowrap;align-items:center;flex-shrink:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-rank-panel .ty-panel-action{padding:0;min-width:0}
+  .ty-terminal.ty-terminal-overview .ty-rank-controls :is(input,select,button){height:22px;min-height:22px}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-table-scroll{min-height:0;max-height:216px;overflow:auto;flex:1}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-update:empty{display:none}
+  .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-rank-panel .ty-panel-subtitle{display:none}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-mini-ladder-body{max-height:224px;overflow:auto}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-mini-ladder-row{min-height:32px;grid-template-columns:56px minmax(0,1fr)}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-mini-ladder-stocks{gap:2px;padding:2px 6px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-mini-ladder-stocks button{min-height:24px;padding:1px 4px;font-size:13px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-mini-ladder-footer{padding:2px 6px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-sector-tracking .ty-ai-subject{padding:2px 8px;min-height:22px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-sector-tracking-summary{margin:0;padding:1px 8px;font-size:12px;line-height:18px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-sector-tracking-footer{padding:2px 8px;line-height:18px;font-size:12px;margin-top:auto}
+  .ty-terminal.ty-terminal-overview .ty-sector-tracking .ty-stock-name{display:block;text-align:left}
+  .ty-terminal.ty-terminal-overview .ty-sector-tracking .ty-stock-name small{display:none}
+}
+.ty-terminal.ty-terminal-overview .ty-tracking-sector{font-size:13px;font-weight:500;margin-right:auto;color:#f5d99a}
+.ty-terminal.ty-terminal-overview .ty-sector-tracking-head>.ty-link{margin-left:auto}
+@media(max-width:1199px){.ty-terminal.ty-terminal-overview .ty-overview-flow-row{grid-template-columns:minmax(0,1fr)}}
+/* Core ladder analysis is open on arrival; detail lists scroll inside their area. */
+.ty-terminal.ty-terminal-ladder>.ladder-extension{margin:6px 0 8px}
+.ty-terminal.ty-terminal-ladder>.ladder-extension>summary{padding:6px 8px;font-size:14px}
+.ty-terminal.ty-terminal-ladder>.ladder-extension>.ladder-matrix-body>.ladder-matrix-scroll{max-height:280px}
+@media(min-width:1001px){
+  .ty-terminal.ty-terminal-ladder .ladder-matrix-body{padding:0 8px 4px}
+  .ty-terminal.ty-terminal-ladder .review-extension-tools{padding-block:3px;gap:6px}
+  .ty-terminal.ty-terminal-ladder .review-extension-tools button{min-height:24px;padding:2px 8px}
+  .ty-terminal.ty-terminal-ladder .ladder-matrix thead th{padding:3px 4px;height:28px}
+  .ty-terminal.ty-terminal-ladder .ladder-matrix .ladder-stock{min-height:24px;padding:2px 3px;font-size:13px;line-height:20px}
+  .ty-terminal.ty-terminal-ladder .ty-table td{padding-block:2px}
+  .ty-terminal.ty-terminal-ladder .ty-table :is(.ty-stock-name,.ty-text-button){min-height:20px;padding-block:0}
+  .ty-terminal.ty-terminal-ladder .history-plot-note{margin-block:4px}
+}
+
+@media(min-width:1200px){
+  .ty-terminal.ty-terminal-overview .ty-market-ribbon{min-height:38px;padding-block:2px;margin-bottom:4px;row-gap:2px}
+  .ty-terminal.ty-terminal-overview .ty-market-ribbon>.ty-ribbon-turnover{flex-direction:row;align-items:center;gap:6px}
+  .ty-terminal.ty-terminal-overview .ty-market-ribbon>div{min-height:28px;padding-inline:8px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified input[type=checkbox]{width:14px;height:14px;min-height:14px;margin:0;padding:0;vertical-align:middle}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-source summary{min-height:20px;padding:0;line-height:20px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-footer{height:22px}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-fund-legend button{white-space:nowrap}
+}

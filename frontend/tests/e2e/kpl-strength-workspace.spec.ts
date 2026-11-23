@@ -1,0 +1,105 @@
+import {test,expect} from '@playwright/test';
+import {terminalFixture,terminalDay} from './terminalTestFixtures';
+
+test('KPL selector compares original strengths with shared hover and a separate funds mode',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ const rows=Array.from({length:12},(_,i)=>({code:String(800000+i),name:'强度题材'+i,strength:i===11?null:String(1000-i*100),limit_up_count:i===0?21:i===1?0:null,limit_up_received_at:terminalDay+'T13:04:00+08:00'}));
+ const stamp=terminalDay+'T13:05:00+08:00';
+ await page.route('**/api/v1/**',async route=>{
+  const u=new URL(route.request().url());const ok=(data:unknown)=>route.fulfill({json:{data,meta:{app_mode:'real',request_id:'synthetic',generated_at:stamp,quality:{status:'partial',reasons:[]}}}});
+  if(u.pathname==='/api/v1/session')return ok({user:{id:'kpl-fixture',username:'synthetic',role:'admin'},csrf_token:'synthetic'});
+  if(u.pathname==='/api/v1/workbench-view')return ok(terminalFixture(u.searchParams));
+  if(u.pathname==='/api/v1/kpl-strength')return ok({trade_day:terminalDay,state:'available',received_at:stamp,history_truncated:false,coverage:"partial_pages",total_count:13,rows,
+   history:['09:15','09:30','09:35','10:30','11:25','11:30','11:40','12:00','12:55','13:00','13:05','15:00','15:02'].map(t=>({received_at:terminalDay+'T'+t+':00+08:00',values:Object.fromEntries(rows.map(r=>[r.code,t==='12:00'?'999999':r.strength]))}))});
+  if(u.pathname==='/api/v1/ths-funds')return ok({sampled_day:terminalDay,status:'available',received_at:stamp,complete:true,missing_pages:[],rejected_rows:0,last_error:null,rows:[],history:[]});
+  if(u.pathname==='/api/v1/ai/settings')return ok({enabled:false,features:[]});
+  return ok({items:[],next_cursor:null});
+ });
+ await page.goto('/workbench?view=funds&trade_day='+terminalDay);
+ await expect(page.getByRole('button',{name:'板块强度',exact:true})).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('[data-kpl-code]')).toHaveCount(6);
+ await expect(page.getByText(/12\/13 · 本批未齐/)).toBeVisible();
+ await expect(page.getByLabel('开盘啦强度降序排行')).toContainText('强度题材0（1,000）');
+ await expect(page.getByLabel('开盘啦强度降序排行')).toContainText('—涨停');
+ await expect(page.getByLabel('开盘啦强度降序排行')).toContainText('21涨停');
+ await expect(page.getByLabel('开盘啦强度降序排行')).toContainText('0涨停');
+ await expect(page.getByLabel('开盘啦强度降序排行').locator('label').first()).toHaveAttribute('title',/21家涨停 · 接收/);
+ for(let i=6;i<10;i++)await page.getByRole('checkbox',{name:'对比强度题材'+i+'强度',exact:true}).check();
+ await expect(page.locator('[data-kpl-code]')).toHaveCount(10);
+ await expect(page.getByRole('checkbox',{name:'对比强度题材10强度',exact:true})).toBeDisabled();
+ await page.getByRole('checkbox',{name:'对比强度题材0强度',exact:true}).uncheck();
+ await page.getByRole('checkbox',{name:'对比强度题材10强度',exact:true}).check();
+ const chart=page.getByRole('img',{name:'开盘啦板块强度接收采样曲线',exact:true});
+ await chart.focus();await chart.press('End');
+ await expect(page.locator('.ty-chart-readout')).toContainText('强度题材10');
+ await expect(page.locator('.ty-chart-readout dd').last()).toHaveText('0');
+ await expect(page.locator('.ty-chart-readout')).toContainText('15:00');
+ await expect(chart).toContainText('11:30');
+ await expect(chart).not.toContainText('11:30 / 13:00');
+ await expect(chart).not.toContainText('12:00');
+ await chart.press('ArrowLeft');await chart.press('ArrowLeft');
+ await expect(page.locator('.ty-chart-readout')).toContainText('13:00');
+ await chart.press('ArrowLeft');
+ await expect(page.locator('.ty-chart-readout')).toContainText('11:30');
+ const line=await page.locator('[data-kpl-code="800001"] path').getAttribute('d');
+ expect(line?.match(/M/g)).toHaveLength(4);
+ await page.getByLabel('搜索开盘啦板块').fill('强度题材11');
+ await expect(page.getByLabel('开盘啦强度降序排行').locator('label')).toHaveCount(1);
+ await page.getByLabel('搜索开盘啦板块').fill('');
+ await page.getByRole('button',{name:'恢复前六',exact:true}).click();
+ await chart.focus();await chart.press('End');
+ await page.screenshot({path:'test-results/kpl-strength-reference-1440.png',fullPage:true});
+ await page.getByRole('button',{name:'资金净额',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'板块资金脉络',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'板块强度',exact:true}).click();
+ await expect(page.locator('[data-kpl-code]')).toHaveCount(6);
+ expect(errors).toEqual([]);
+});
+
+test('overview always follows the current valid top five despite old manual selections and rank changes',async({page})=>{
+ const stamp=terminalDay+'T13:05:00+08:00';
+ const rows=Array.from({length:9},(_,i)=>({code:String(800000+i),name:'自动题材'+i,strength:i<7?String(1000-i*100):null,limit_up_count:null}));
+ await page.clock.install({time:new Date(terminalDay+'T13:05:00+08:00')});
+ await page.addInitScript(({day})=>{
+  sessionStorage.setItem('ty-workspace-v1:top-five-fixture:kpl-strength:trade_day='+day+':overview-extremes-v1',JSON.stringify(['800000','800006','800008']));
+  sessionStorage.setItem('ty-workspace-v1:top-five-fixture:kpl-strength:trade_day='+day+':overview-top-five-v1',JSON.stringify(Array.from({length:10},(_,i)=>String(800000+i))));
+ },{day:terminalDay});
+ await page.route('**/api/v1/**',async route=>{
+  const u=new URL(route.request().url());
+  const ok=(data:unknown)=>route.fulfill({json:{data,meta:{app_mode:'real',request_id:'synthetic',generated_at:stamp,quality:{status:'partial',reasons:[]}}}});
+  if(u.pathname==='/api/v1/session')return ok({user:{id:'top-five-fixture',username:'synthetic',role:'admin'},csrf_token:'synthetic'});
+  if(u.pathname==='/api/v1/workbench-view')return ok(terminalFixture(u.searchParams));
+  if(u.pathname==='/api/v1/kpl-strength')return ok({trade_day:terminalDay,state:'available',received_at:stamp,history_truncated:false,coverage:'partial_pages',total_count:10,rows,
+   history:[{received_at:stamp,values:Object.fromEntries(rows.map(row=>[row.code,row.strength]))}]});
+  if(u.pathname==='/api/v1/ai/settings')return ok({enabled:false,features:[]});
+  return ok({items:[],next_cursor:null});
+ });
+ await page.goto('/workbench?view=overview&trade_day='+terminalDay);
+ const plotted=()=>page.locator('[data-kpl-code]').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('data-kpl-code')));
+ const codes=(indices:number[])=>indices.map(i=>String(800000+i));
+ await expect.poll(plotted).toEqual(codes([0,1,2,3,4]));
+ await expect(page.getByRole('checkbox',{checked:true,name:/^自动选择自动题材/})).toHaveCount(5);
+ await expect(page.locator('.ty-strength-footer')).toContainText('已选 5/5');
+ await expect(page.locator('.ty-strength-footer')).toContainText('自动前五');
+ await expect(page.getByRole('checkbox',{name:'自动选择自动题材0强度',exact:true})).toBeDisabled();
+ await expect(page.getByRole('checkbox',{name:'自动选择自动题材6强度',exact:true})).toBeDisabled();
+ rows[5].strength='2000';
+ await page.clock.fastForward(30_001);
+ await expect.poll(plotted).toEqual(codes([5,0,1,2,3]));
+ await expect(page.getByRole('checkbox',{name:'自动选择自动题材4强度',exact:true})).not.toBeChecked();
+ await page.getByLabel('搜索开盘啦板块').fill('自动题材6');
+ await expect(page.getByLabel('开盘啦强度降序排行').locator('label')).toHaveCount(1);
+ await expect.poll(plotted).toEqual(codes([5,0,1,2,3]));
+ await page.getByLabel('搜索开盘啦板块').fill('');
+ rows[6].strength='3000';
+ await page.clock.fastForward(30_001);
+ await expect.poll(plotted).toEqual(codes([6,5,0,1,2]));
+ await page.reload();
+ await expect.poll(plotted).toEqual(codes([6,5,0,1,2]));
+ for(const row of rows)row.strength=null;
+ rows[0].strength='0';rows[1].strength='-1';
+ await page.clock.fastForward(30_001);
+ await expect.poll(plotted).toEqual(codes([0,1]));
+ await expect(page.getByRole('checkbox',{checked:true,name:/^自动选择自动题材/})).toHaveCount(2);
+ await expect(page.locator('.ty-strength-footer')).toContainText('已选 2/5');
+});

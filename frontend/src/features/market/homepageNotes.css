@@ -1,0 +1,9 @@
+.homepage-notes { margin:10px 0; color:var(--muted,#7085a2); font-size:12px; line-height:1.65; }
+.homepage-notes>summary { width:fit-content; cursor:pointer; color:var(--ink); font-weight:500; padding:4px 0; }
+.homepage-notes>summary:focus-visible { outline:2px solid var(--blue); outline-offset:3px; border-radius:2px; }
+.homepage-notes[open] { border-top:1px solid var(--line); padding-top:5px; }
+.homepage-notes p { margin:6px 0; overflow-wrap:anywhere; }
+.market-strip.market-strip-auction .index-ribbon .index-tile { gap:0; padding-top:1px; padding-bottom:1px; }
+.market-strip.market-strip-auction .index-ribbon .index-tile>a,.market-strip.market-strip-auction .index-ribbon .index-tile>span:first-child,
+.market-strip.market-strip-auction .index-ribbon .index-tile strong,.market-strip.market-strip-auction .index-ribbon .index-tile .index-price-change { line-height:1.2; }
+.market-strip-auction .index-tile .homepage-index-meta { display:block; color:#646a73; font-size:10px; line-height:1.2; overflow-wrap:anywhere; text-align:center; }

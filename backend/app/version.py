@@ -1,0 +1,3 @@
+SCHEMA_REVISION = "0031_collection_gate_indexes"
+APP_VERSION = "0.5.1"
+SCHEMA_COMPATIBLE_REVISIONS = frozenset({SCHEMA_REVISION})

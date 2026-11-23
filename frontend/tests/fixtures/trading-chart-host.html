@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body><div id="controlled-chart-test"></div>
+<script type="module">
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+  import { HistoryChart } from '../../src/features/market/HistoryChart.tsx';
+  window.testReact = React;
+  window.testChart = HistoryChart;
+  window.testRoot = createRoot(document.getElementById('controlled-chart-test'));
+  window.testRoot.render(React.createElement(HistoryChart, { instrument: '00000000-0000-4000-8000-000000000071', period: '日K' }));
+</script>
+</body></html>

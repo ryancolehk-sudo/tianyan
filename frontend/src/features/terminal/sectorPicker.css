@@ -1,0 +1,19 @@
+.ty-terminal .ty-sector-picker{display:inline-flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;max-width:180px;text-align:left;cursor:pointer}
+.ty-sector-picker>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ty-sector-picker>svg{flex:none;width:14px;height:14px}
+.ty-sector-picker-popup{position:fixed;z-index:10010;box-sizing:border-box;display:flex;flex-direction:column;min-height:100px;border:1px solid #45586b;border-radius:5px;background:#131e29;color:#e7eef4;box-shadow:0 8px 24px #0009;font:12px/1.5 var(--ui-font,'Segoe UI',sans-serif);overflow:hidden;color-scheme:dark}
+.ty-sector-picker-search{display:flex;align-items:center;flex:none;gap:6px;padding:8px;border-bottom:1px solid #304151}
+.ty-sector-picker-search>svg{flex:none;width:16px;height:16px;color:#b7c6d1}
+.ty-sector-picker-search>input{flex:1;min-width:0;width:100%;min-height:30px;padding:4px 6px;border:1px solid #526274;border-radius:3px;background:#0c141e;color:#e7eef4;font:inherit;caret-color:#f5d99a}
+.ty-sector-picker-search>input::placeholder{color:#a6b8c6;opacity:1}
+.ty-sector-picker-search>button{display:grid;place-items:center;flex:none;width:30px;height:30px;padding:5px;border:0;background:transparent;color:#b7c6d1;cursor:pointer}
+.ty-sector-picker-search>button svg{width:16px;height:16px}
+.ty-sector-picker-popup :is(input,button):focus-visible{outline:2px solid #f5d99a;outline-offset:1px}
+.ty-sector-picker-popup>ul{min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;list-style:none;margin:0;padding:4px;scroll-padding:4px}
+.ty-sector-picker-popup [role=option]{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 9px;min-height:36px;border-radius:3px;cursor:pointer}
+.ty-sector-picker-popup [role=option][data-active]{background:#263747;outline:1px solid #68788a;outline-offset:-1px}
+.ty-sector-picker-popup [role=option] strong{display:block;font-weight:500}
+.ty-sector-picker-popup [role=option] small{display:block;color:#b7c6d1;font-size:11px}
+.ty-sector-picker-popup [role=option] em{color:#f5d99a;font-size:11px;font-style:normal;white-space:nowrap}
+.ty-sector-picker-popup>p{flex:none;margin:0;padding:5px 12px;border-top:1px solid #304151;color:#b7c6d1}
+@media(pointer:coarse){.ty-sector-picker-popup [role=option]{min-height:44px}.ty-sector-picker-search>:is(input,button){min-height:44px}.ty-sector-picker-search>button{min-width:44px}}

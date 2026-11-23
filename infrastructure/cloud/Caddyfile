@@ -1,0 +1,24 @@
+{
+    email {$TIANYAN_ACME_EMAIL}
+    admin localhost:2019
+}
+
+{$TIANYAN_DOMAIN} {
+    encode zstd gzip
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy same-origin
+        Strict-Transport-Security "max-age=31536000"
+        -Server
+    }
+    # Caddy passes the actual HTTPS scheme to Uvicorn. The inner static-file
+    # server must not replace it with its private HTTP connection's scheme.
+    @backend path /api/* /health/*
+    request_body {
+        max_size 64KB
+    }
+    header @backend Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    reverse_proxy @backend api:8000
+    reverse_proxy web:8080
+}

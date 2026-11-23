@@ -1,0 +1,145 @@
+/* Compact auction workstation: four independent day lists and a readable detail rail. */
+.ty-terminal.ty-terminal-auction .ty-auction-workspace { grid-template-columns: minmax(0, 1fr) clamp(360px, 35%, 620px); align-items: start; gap: 8px; }
+.ty-terminal-auction .ty-auction-comparison > .ty-panel-head { min-height: 34px; padding: 4px 8px; }
+.ty-terminal-auction .ty-auction-comparison .ty-panel-label { flex-wrap: wrap; gap: 2px 8px; }
+.ty-terminal-auction .ty-auction-comparison .ty-panel-label small { font-size: 11px; }
+.ty-terminal-auction .ty-auction-additions { padding: 4px 6px; gap: 4px 6px; }
+.ty-terminal-auction .ty-auction-sort-tools { display:flex; align-items:center; gap:8px; }
+.ty-terminal-auction .ty-auction-sort-tools button[aria-pressed=true] { color:var(--ty-gold); }
+.ty-terminal.ty-terminal-auction .ty-auction-node-head>button { min-width:0; min-height:20px; padding:0; display:inline-flex; align-items:center; justify-content:flex-end; border:0; border-radius:0; background:transparent; color:inherit; font:inherit; line-height:20px; white-space:nowrap; cursor:pointer; }
+.ty-terminal.ty-terminal-auction .ty-auction-node-head>button.ty-gold,
+.ty-terminal.ty-terminal-auction .ty-auction-node-head>button[aria-pressed=true],
+.ty-terminal.ty-terminal-auction .ty-auction-node-head>button:hover { color:var(--ty-gold); }
+.ty-terminal.ty-terminal-auction .ty-auction-node-head>button:focus-visible { outline:2px solid var(--ty-gold); outline-offset:1px; }
+.ty-terminal.ty-terminal-auction .ty-auction-days { display: grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap: 2px; padding: 0; overflow-x: auto; }
+.ty-terminal.ty-terminal-auction .ty-auction-day { --ty-auction-inset: 4px; --ty-auction-rank-width: 14px; --ty-auction-gap: 3px; min-width: 0; }
+.ty-terminal-auction .ty-auction-day h3 { font-size: 14px; line-height: 23px; }
+.ty-terminal-auction .ty-auction-day h3{display:flex;justify-content:center;align-items:center;gap:6px}
+.ty-terminal-auction .ty-auction-category{font-size:11px;font-weight:500;white-space:nowrap}
+.ty-terminal-auction .ty-auction-source { min-height: 32px; padding: 2px 4px; font-size: 10px; line-height: 14px; }
+.ty-terminal-auction .ty-auction-source details { position: relative; }
+.ty-terminal-auction .ty-auction-source summary { cursor: pointer; color: #aabcc9; }
+.ty-terminal-auction .ty-auction-source details[open] > div { position: absolute; z-index: 3; left: 0; top: 100%; width: 210px; padding: 6px; background: #172631; border: 1px solid var(--ty-line); }
+.ty-terminal-auction .ty-auction-node-head { padding-top: 3px; padding-bottom: 3px; font-size: 10px; }
+.ty-terminal.ty-terminal-auction .ty-auction-stock-list { height: clamp(360px, calc(100dvh - 430px), 1000px); }
+.ty-terminal.ty-terminal-auction .ty-auction-stock-list li { box-sizing: border-box; min-height: 38px; padding: 3px var(--ty-auction-inset); gap: 3px; }
+.ty-terminal-auction .ty-auction-name { column-gap: 3px; padding-bottom: 2px; }
+.ty-terminal-auction .ty-auction-labels { flex-wrap: wrap; gap: 2px 3px; }
+.ty-terminal-auction .ty-auction-name .ty-stock-name { font-size: 12px; line-height: 14px; }
+.ty-terminal-auction .ty-auction-name .ty-tag { font-size: 9px; line-height: 12px; padding: 0 2px; max-width: 58px; }
+.ty-terminal-auction .ty-auction-values { font-size: 11px; line-height: 14px; }
+.ty-terminal-auction .ty-auction-rank { font-size: 10px; line-height: 14px; }
+.ty-terminal-auction .ty-auction-note { padding: 4px 6px; }
+.ty-terminal-auction .ty-auction-note > span { float: none; display: block; }
+.ty-terminal-auction .ty-auction-bottom { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); align-items: start; }
+.ty-terminal-auction .ty-auction-workspace > .ty-ai-column { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ty-terminal-auction .ty-auction-detail { min-width: 0; }
+.ty-terminal-auction .ty-auction-detail .ty-panel-head { min-height: 38px; flex-wrap: wrap; gap: 4px; padding: 6px 8px; }
+.ty-terminal-auction .ty-auction-detail .ty-chart-tabs { flex-wrap: wrap; gap: 6px 12px; padding: 6px 8px 2px; }
+.ty-terminal-auction .ty-auction-detail .ty-table { min-width: 410px; font-size: 11px; }
+.ty-terminal-auction .ty-auction-detail .ty-table td { padding: 5px 6px; }
+.ty-terminal-auction .ty-auction-detail .ty-auction-chart svg { height: 160px; }
+.ty-terminal-auction .ty-auction-detail .ty-auction-metrics { flex-wrap: wrap; gap: 6px; }
+.ty-terminal-auction .ty-auction-bottom .ty-ai-overview { min-height: 0; }
+.ty-terminal-auction .ty-auction-bottom .ty-ai-overview h3 { font-size: 14px; padding: 8px; }
+@media (max-width: 1150px) {
+  .ty-terminal.ty-terminal-auction .ty-auction-workspace { grid-template-columns: minmax(0, 1fr); }
+  .ty-terminal-auction .ty-auction-workspace > .ty-ai-column { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .ty-terminal.ty-terminal-auction .ty-auction-days { grid-template-columns: repeat(4, minmax(235px, 1fr)); }
+  .ty-terminal-auction .ty-auction-bottom, .ty-terminal-auction .ty-auction-workspace > .ty-ai-column { display: flex; flex-direction: column; }
+  .ty-terminal-auction .ty-auction-bottom > *, .ty-terminal-auction .ty-auction-workspace > .ty-ai-column > * { width: 100%; min-width: 0; }
+  .ty-terminal-auction .ty-auction-detail .ty-table { min-width: 410px; }
+}
+@media (pointer: coarse) {
+  .ty-terminal.ty-terminal-auction .ty-auction-node-head>button { min-height:44px; }
+  .ty-terminal-auction .ty-auction-name .ty-stock-name, .ty-terminal-auction .ty-auction-values { min-height: 28px; }
+}
+
+
+.ty-terminal-auction .ty-auction-rail { display:flex; flex-direction:column; gap:8px; min-width:0; }
+.ty-terminal-auction .ty-auction-detail-stack { display:flex; flex-direction:column; gap:8px; min-width:0; min-height:0; }
+.ty-terminal-auction .ty-auction-detail-stack>.ty-panel { flex:none; }
+.ty-terminal-auction .ty-auction-reference { display:flex; flex-direction:column; min-height:0; }
+.ty-terminal-auction .ty-auction-reference > .ty-panel-head { flex:none; min-height:34px; padding:5px 10px; }
+.ty-terminal-auction .ty-auction-reference .ty-panel-action { font-size:11px; white-space:nowrap; }
+.ty-terminal-auction .ty-auction-reference-body { padding:6px 10px; font-size:12px; line-height:20px; }
+.ty-terminal-auction .ty-auction-reference-totals { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+.ty-terminal-auction .ty-auction-reference-totals span { display:flex; flex-wrap:wrap; gap:0 4px; align-items:baseline; }
+.ty-terminal-auction .ty-auction-reference-totals small { color:var(--ty-muted); font-size:11px; }
+.ty-terminal-auction .ty-auction-reference-totals b { white-space:nowrap; font-weight:600; }
+.ty-terminal-auction .ty-auction-reference-totals span:not(:last-child) b { color:var(--ty-gold); }
+.ty-terminal-auction .ty-auction-reference-body section { border-top:1px solid var(--ty-line); margin-top:6px; padding-top:2px; }
+.ty-terminal-auction .ty-auction-reference-body table { width:100%; table-layout:fixed; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+.ty-terminal-auction .ty-auction-reference-body th,
+.ty-terminal-auction .ty-auction-reference-body td { padding:0 4px; height:22px; line-height:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; font-weight:400; border-bottom:1px solid var(--ty-line); }
+.ty-terminal-auction .ty-auction-reference-body th { background:transparent; color:inherit; font-size:12px; }
+.ty-terminal-auction .ty-auction-reference-body th:first-child { padding-left:0; }
+.ty-terminal-auction .ty-auction-reference-body thead th { height:20px; line-height:20px; background:#172631; color:var(--ty-muted); font-size:11px; }
+.ty-terminal-auction .ty-auction-reference-body td:nth-child(2),
+.ty-terminal-auction .ty-auction-reference-body th:nth-child(2),
+.ty-terminal-auction .ty-auction-reference-stocks td:nth-child(3),
+.ty-terminal-auction .ty-auction-reference-stocks thead th:nth-child(3) { text-align:right; }
+.ty-terminal-auction .ty-auction-reference-body .ty-text-button { max-width:100%; padding:0; min-height:20px; font:inherit; line-height:20px; vertical-align:baseline; }
+.ty-terminal-auction .ty-auction-reference-stocks col:nth-child(1) { width:6em; }
+.ty-terminal-auction .ty-auction-reference-stocks col:nth-child(2),
+.ty-terminal-auction .ty-auction-reference-stocks col:nth-child(3) { width:4.25em; }
+.ty-terminal-auction .ty-auction-reference-name { display:flex; align-items:center; }
+.ty-terminal-auction .ty-auction-reference-stocks th[scope=row] .ty-text-button { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ty-terminal-auction .ty-auction-reference-rank { width:1.2em; flex:none; font-size:11px; color:var(--ty-gold); }
+.ty-terminal-auction .ty-auction-reference-tags { color:var(--ty-muted); }
+.ty-terminal-auction .ty-auction-reference-body :focus-visible { outline:2px solid var(--ty-gold); outline-offset:-2px; }
+.ty-terminal-auction .ty-auction-reference-receipt { display:flex; justify-content:space-between; gap:8px; margin:4px 0 0; color:var(--ty-muted); font-size:11px; line-height:18px; }
+.ty-terminal-auction .ty-auction-reference-empty { padding:24px 0; color:var(--ty-muted); }
+@media(min-width:701px) {
+  .ty-terminal-auction .ty-auction-rail { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; align-content:start; }
+  .ty-terminal-auction .ty-auction-detail-stack { grid-column:1; max-height:100%; overflow:auto; scrollbar-width:thin; scrollbar-color:#344d5c #0d1921; }
+  .ty-terminal-auction .ty-auction-rail .ty-panel-head { flex-wrap:wrap; align-items:center; align-content:center; min-height:58px; padding:4px 8px; gap:0 4px; }
+  .ty-terminal-auction .ty-auction-rail .ty-panel-label { flex:1 0 100%; }
+  .ty-terminal-auction .ty-auction-rail .ty-panel-action { margin-left:auto; line-height:22px; }
+  .ty-terminal-auction .ty-auction-detail-stack .ty-auction-reference>.ty-panel-head { min-height:34px; }
+  .ty-terminal-auction .ty-auction-detail-stack .ty-auction-reference .ty-panel-label { flex:1 1 auto; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 8px; margin-top:0; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail { display:flex; flex-direction:column; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-table-scroll { overflow:visible; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-table { min-width:0; width:100%; table-layout:fixed; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-table :is(th,td) { padding:4px; white-space:normal; overflow-wrap:anywhere; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-table col:first-child { width:36px; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-table col:nth-child(2) { width:80px; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-table col:last-child { width:36px; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-table td:first-child { white-space:nowrap; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-panel-caption { padding:4px 6px; line-height:16px; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-chart-tabs { gap:4px 10px; padding:4px 6px; }
+  .ty-terminal-auction .ty-auction-rail .ty-auction-detail .ty-inline-note { padding:4px 6px; line-height:16px; }
+  .ty-terminal.ty-terminal-auction .ty-auction-reference-workspace .ty-auction-days { grid-template-columns:minmax(210px,1.15fr) repeat(3,minmax(180px,1fr)); }
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-node-head,
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-values { column-gap:2px; }
+}
+@media(min-width:1151px) and (min-height:700px) {
+  .ty-terminal.ty-terminal-auction .ty-auction-reference-workspace { grid-template-columns:minmax(0,1fr) minmax(560px,40%); }
+  .ty-terminal-auction .ty-auction-reference-workspace { height:var(--ty-auction-available,calc(100dvh - 108px)); min-height:0; }
+  .ty-terminal-auction .ty-auction-reference-workspace>.ty-main-column { height:100%; min-height:0; }
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-comparison { display:flex; flex-direction:column; flex:1; min-height:0; }
+  .ty-terminal.ty-terminal-auction .ty-auction-reference-workspace .ty-auction-days { flex:1; min-height:0; }
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-day { display:flex; flex-direction:column; min-height:0; }
+  .ty-terminal.ty-terminal-auction .ty-auction-reference-workspace .ty-auction-stock-list { height:auto; flex:1; min-height:0; }
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-day>h3,
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-source,
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-node-head,
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-day>.ty-panel-caption { flex:none; }
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-rail { height:100%; min-height:0; }
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-detail { min-height:0; }
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-detail>.ty-table-scroll { flex:none; }
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-detail .ty-auction-chart svg { height:auto; width:100%; }
+  .ty-terminal-auction .ty-auction-reference-workspace .ty-auction-reference { min-height:min-content; }
+}
+@media(max-width:1150px), (max-height:699px) {
+  .ty-terminal.ty-terminal-auction .ty-auction-reference-workspace .ty-auction-stock-list { height:clamp(360px,calc(100dvh - 290px),1000px); }
+}
+@media(min-width:701px) and (max-width:1150px) {
+  .ty-terminal-auction .ty-auction-rail { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; }
+}
+@media(pointer:coarse) {
+  .ty-terminal-auction .ty-auction-reference-body .ty-text-button { min-height:28px; }
+}
