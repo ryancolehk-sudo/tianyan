@@ -4,7 +4,7 @@
 
 ## 本机安装
 
-准备 Python 3.10 或更高版本，以及支持 Linux 容器的 Docker 和 Docker Compose v2。首次构建需要联网下载依赖和镜像。解压完整的源码 ZIP，或克隆项目。在含有 `compose.yaml` 的目录执行：
+准备 Python 3.10 或更高版本，以及支持 Linux 容器的 Docker 和 Docker Compose v2。Windows 用户先安装并启动 Docker Desktop，使用 Linux 容器。项目随后通过 Compose 自动准备数据库、服务、网络和数据卷。首次构建需要联网下载依赖和镜像。解压完整的源码 ZIP，或克隆项目。在含有 `compose.yaml` 的目录执行：
 
 ```sh
 python scripts/project.py verify-locks
@@ -15,6 +15,8 @@ python scripts/project.py check
 ```
 
 在终端按提示为自己的管理员设定密码，再打开 [本机工作台](http://127.0.0.1:8088)。默认仅监听本机。8088 已被占用时，在首次初始化时指定其他空闲端口，并用该端口访问。日常启动和停止分别运行 `python scripts/project.py start` 和 `python scripts/project.py stop`。已初始化的实例沿用原目录与配置。
+
+Windows 上完成管理员初始化后，桌面会出现带项目图标的「天衍系统」。保持 Docker 引擎运行，双击图标即可打开工作台；实例已停止时会先启动服务。已有实例可在源码目录运行 `python scripts/project.py shortcut` 补建快捷方式。保留解压目录，以便快捷方式找到启动脚本和图标。
 
 从 ZIP 安装时，启动器会对照 `source-manifest.json` 校验文件。也可以先运行 `python scripts/source_distribution.py check`。从 Git 安装时，启动器记录干净工作区的提交版本。
 

@@ -32,6 +32,12 @@ VIAddVersionKey "LegalCopyright" "Tianyan contributors"
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "SimpChinese"
 
+!macro TianyanShortcuts
+  CreateDirectory "$SMPROGRAMS\天衍系统"
+  CreateShortcut "$DESKTOP\天衍系统.lnk" "$INSTDIR\versions\${RELEASE_ID}\runtime\pythonw.exe" '-I -B -m app.native.launcher --config "$APPDATA\Tianyan\runtime.json"' "$INSTDIR\versions\${RELEASE_ID}\frontend\tianyan.ico" 0
+  CreateShortcut "$SMPROGRAMS\天衍系统\天衍系统.lnk" "$INSTDIR\versions\${RELEASE_ID}\runtime\pythonw.exe" '-I -B -m app.native.launcher --config "$APPDATA\Tianyan\runtime.json"' "$INSTDIR\versions\${RELEASE_ID}\frontend\tianyan.ico" 0
+!macroend
+
 Function .onInit
   ${IfNot} ${RunningX64}
     MessageBox MB_ICONSTOP "需要 Windows 10/11 64 位系统。"
@@ -47,6 +53,7 @@ Function .onInit
     nsExec::ExecToLog '"$0\runtime\python.exe" -I -B -m app.native.install install --program "$0" --data "$APPDATA\Tianyan" --wrapper "$INSTDIR\TianyanService.exe"'
     Pop $1
     ${If} $1 == 0
+      !insertmacro TianyanShortcuts
       MessageBox MB_ICONINFORMATION "后台服务已就绪。可从桌面快捷方式打开天衍系统。"
       SetErrorLevel 0
     ${Else}
@@ -78,9 +85,7 @@ Section "天衍系统" SEC_MAIN
     SetErrorLevel 1
     Abort
   ${EndIf}
-  CreateDirectory "$SMPROGRAMS\天衍系统"
-  CreateShortcut "$DESKTOP\天衍系统.lnk" "$INSTDIR\versions\${RELEASE_ID}\runtime\pythonw.exe" '-I -B -m app.native.launcher --config "$APPDATA\Tianyan\runtime.json"'
-  CreateShortcut "$SMPROGRAMS\天衍系统\天衍系统.lnk" "$INSTDIR\versions\${RELEASE_ID}\runtime\pythonw.exe" '-I -B -m app.native.launcher --config "$APPDATA\Tianyan\runtime.json"'
+  !insertmacro TianyanShortcuts
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Tianyan" "DisplayName" "天衍系统"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Tianyan" "DisplayVersion" "${VERSION}"

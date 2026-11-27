@@ -579,6 +579,7 @@ def main():
     locking.add_argument("--refresh", action="store_true")
     for name in ["start", "stop", "status", "check", "backup", "verify-locks"]:
         subs.add_parser(name)
+    subs.add_parser("shortcut", help="为本 Windows 实例创建桌面快捷方式")
     testing = subs.add_parser("test")
     testing.add_argument("--subnet", type=test_network,
         help="仅为本次隔离测试指定未占用的 RFC1918 网段；不修改或清理现有网络。")
@@ -610,6 +611,17 @@ def main():
         print("数据库、迁移和 worker 心跳已就绪；这不代表业务数据已接入。")
     elif args.command == "bootstrap":
         compose("exec", "api", "python", "-m", "app.cli", "bootstrap", "--username", args.username)
+        if os.name == "nt":
+            from desktop_launcher import create_shortcut
+            try:
+                create_shortcut()
+                print("桌面快捷方式已创建。")
+            except (OSError, subprocess.CalledProcessError):
+                print("管理员已创建。可运行 python scripts/project.py shortcut 重试创建桌面入口。")
+    elif args.command == "shortcut":
+        from desktop_launcher import create_shortcut
+        create_shortcut()
+        print("桌面快捷方式已创建。")
     else:
         compose({"stop": "stop", "status": "ps"}[args.command])
 
