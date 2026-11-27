@@ -1,5 +1,6 @@
 import hashlib
 import secrets
+from urllib.parse import urlsplit
 from datetime import UTC, datetime, timedelta
 
 from argon2 import PasswordHasher
@@ -27,6 +28,17 @@ class APIError(Exception):
 
 def digest(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
+
+
+def desktop_origin():
+    base = urlsplit(settings().public_origin)
+    if base.scheme != "http" or not base.port or base.netloc != f"127.0.0.1:{base.port}" or base.path or base.query or base.fragment:
+        raise APIError(403, "desktop_unavailable", "桌面入口仅适用于本机回环部署。")
+    return base.netloc
+
+
+def desktop_ticket_hash(token: str):
+    return digest("desktop-ticket:" + token)
 
 
 def require_instance(db: Session):

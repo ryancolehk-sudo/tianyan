@@ -185,6 +185,7 @@ export type Issue = { "id": string; "title": string; "message": string; "connect
 export type Job = { "id": string; "kind": "snapshot.create" | "rule.run" | "ai.explain" | "ai.generate" | "news.ai" | "system.check" | "source.collect" | "review.collect" | "review.prepare"; "state": "queued" | "running" | "succeeded" | "failed" | "cancelled"; "attempts": number; "result_ref": (ResultRef | null); "error_code": (string | null); "created_at": string; "completed_at": (string | null); };
 export type JobReceipt = { "job_id": string; "result_ref": ResultRef; };
 export type Judgment = { "object_type": "market" | "sector" | "stock" | "event"; "object_id": string; "judgment": string; "support_refs"?: Array<string>; "refuting_refs"?: Array<string>; };
+export type DesktopTicket = { "ticket": string; };
 export type LoginInput = { "username": string; "password": string; };
 export type MaintenanceInput = { "kind": "backup"; };
 export type MaintenanceJob = { "id": string; "kind": "backup" | "update.download" | "update.install"; "status": "queued" | "running" | "succeeded" | "failed" | "cancelled" | "manual_recovery"; "stage": string; "message": string; "error_code": (string | null); "created_at": string; "started_at": (string | null); "completed_at": (string | null); "result": ({  } | null); };

@@ -104,6 +104,14 @@ export const api = {
   reviewCollection: (id: string) => request<import('../features/daily-review/model').Envelope<{ state: string; counts: Record<string, number>; jobs: Array<{ dataset: string; error_code?: string | null; state: string }> }>>('/api/v1/review-data/collections/' + encodeURIComponent(id)),
   workbenchView: (query: URLSearchParams) => request<import('../features/workbench-v2/model').WorkbenchResponse>('/api/v1/workbench-v2?' + query),
   session: () => request<SessionResponse>('/api/v1/session'),
+  desktopSession: async (ticket: string) => {
+    const epoch = beginSessionTransition();
+    try {
+      return await request<SessionResponse>('/api/v1/desktop-session', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticket }),
+      });
+    } finally { endSessionTransition(epoch); }
+  },
   login: async (username: string, password: string) => {
     // A late DELETE must finish before a new POST can set the next session cookie.
     if (pendingLogout) await pendingLogout.catch(() => {});

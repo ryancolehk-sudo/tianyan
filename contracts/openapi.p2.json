@@ -51,6 +51,74 @@
         }
       }
     },
+    "/api/v1/desktop-session": {
+      "post": {
+        "summary": "createDesktopSession",
+        "operationId": "createDesktopSession",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesktopTicket"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_Session_"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
     "/api/v1/session": {
       "post": {
         "summary": "Login",
@@ -27597,6 +27665,19 @@
           "judgment"
         ],
         "title": "Judgment"
+      },
+      "DesktopTicket": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{64}$"
+          }
+        },
+        "required": [
+          "ticket"
+        ],
+        "additionalProperties": false
       },
       "LoginInput": {
         "properties": {

@@ -37,6 +37,13 @@ function Login({ onLogin, expired, signingOut }: { onLogin: (s: SessionResponse)
   return <main className="login"><div className="login-intro"><Brand artwork/><div className="login-intro-caption"><h1>让每一次判断，有据可循。</h1><p>观察市场 · 整理方向 · 记录预案</p></div></div><div className="login-side"><form className="login-form" onSubmit={submit}><span className="badge">天衍系统 · 独立工作空间</span><h2>登录工作空间</h2><p className="secondary">从事实出发，保留每一步研究。</p>{expired && <Notice>会话已失效，请重新登录。</Notice>}<label>账号<input name="username" autoComplete="username" required maxLength={80} pattern={'[a-z0-9_.\\-]+'}/></label><label>密码<input name="password" type="password" autoComplete="current-password" required maxLength={1024}/></label>{error && <ErrorState error={error}/>}<button className="primary" disabled={busy}>{busy ? '正在登录…' : '进入工作台 →'}</button><small>使用本实例管理员创建的账号。尚未初始化时，请按照新电脑搭建指南创建管理员。</small>{signingOut ? <p role="status" className="secondary">正在结束上次登录…</p> : <ChatGPTLogin passwordBusy={busy}/>}</form><span className="login-footer">天衍系统 · 事实 / 判断 / 验证</span></div></main>;
 }
 
+const desktopLaunch = (() => {
+  const ticket = new URLSearchParams(location.hash.slice(1)).get('desktop_ticket');
+  if (ticket === null) return null;
+  history.replaceState(history.state, '', location.pathname + location.search);
+  return api.desktopSession(ticket).then(value => ({ value }), error => ({ error }));
+})();
+
 function App() {
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +74,11 @@ function App() {
     const version = ++checks.current;
     if (initial) setLoading(true);
     setError(null);
-    api.session().then(value => { if (version === checks.current) { acceptSession(value); if (revalidate) window.dispatchEvent(new Event('read-cache-revalidate')); } }).catch(e => {
+    const sessionRequest = initial && desktopLaunch ? desktopLaunch.then(result => {
+      if ('error' in result) throw new Error('桌面入口已过期，请重新双击桌面图标。');
+      return result.value;
+    }) : api.session();
+    sessionRequest.then(value => { if (version === checks.current) { acceptSession(value); if (revalidate) window.dispatchEvent(new Event('read-cache-revalidate')); } }).catch(e => {
       if (version === checks.current && !(e instanceof ApiError && e.status === 401)) setError(e instanceof Error ? e : new Error('连接失败。'));
     }).finally(() => { if (version === checks.current) setLoading(false); });
   }

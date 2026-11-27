@@ -606,6 +606,12 @@ def main():
         restore(args.directory)
     elif args.command == "start":
         start_instance()
+        if os.name == "nt" and config().get("WEB_BIND") == "127.0.0.1":
+            from desktop_launcher import create_shortcut
+            try:
+                create_shortcut()
+            except (OSError, subprocess.CalledProcessError):
+                print("服务已启动。可运行 python scripts/project.py shortcut 补建桌面入口。")
     elif args.command == "check":
         wait_ready(config()["JL_PUBLIC_ORIGIN"])
         print("数据库、迁移和 worker 心跳已就绪；这不代表业务数据已接入。")

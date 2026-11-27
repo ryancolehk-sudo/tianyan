@@ -2,15 +2,17 @@ import argparse
 import getpass
 import json
 import re
+import secrets
+from datetime import UTC, datetime, timedelta
 import sys
 
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.auth import hasher, require_instance
+from app.auth import desktop_origin, desktop_ticket_hash, hasher, require_instance
 from app.db import engine
-from app.models import AuditEvent, Job, User
+from app.models import AuditEvent, Job, LoginSession, User
 
 
 def import_review_archive(username, value):
@@ -41,6 +43,26 @@ def bootstrap(username: str, password: str):
         db.add(user)
         db.flush()
         db.add(AuditEvent(actor_id=user.id, action="instance.bootstrap"))
+
+
+def issue_desktop_ticket():
+    desktop_origin()
+    with Session(engine()) as db, db.begin():
+        require_instance(db)
+        db.execute(text("SELECT pg_advisory_xact_lock(73401901)"))
+        admins = db.scalars(select(User).where(User.enabled.is_(True), User.role == "admin").limit(2)).all()
+        if not admins and not db.scalar(select(func.count()).select_from(User)):
+            user = User(username="owner", password_hash=hasher.hash(secrets.token_urlsafe(48)), role="admin")
+            db.add(user)
+            db.flush()
+            db.add(AuditEvent(actor_id=user.id, action="instance.bootstrap"))
+            admins = [user]
+        if len(admins) != 1:
+            raise ValueError("桌面入口需要唯一启用的管理员。")
+        ticket = secrets.token_urlsafe(48)
+        db.add(LoginSession(user_id=admins[0].id, token_hash=desktop_ticket_hash(ticket), csrf_token="",
+                            expires_at=datetime.now(UTC) + timedelta(seconds=90)))
+    return ticket
 
 
 def configure_free_data(username):
@@ -162,6 +184,7 @@ def configure_breadth_data(username):
 def main():
     parser = argparse.ArgumentParser(description="天衍系统运维入口；不提供默认密码。")
     sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("desktop-ticket")
     init = sub.add_parser("bootstrap", help="仅在空实例创建管理员")
     init.add_argument("--username", required=True)
     init.add_argument("--password-stdin", action="store_true", help="自动化通过标准输入传入，不写命令参数")
@@ -178,7 +201,12 @@ def main():
     breadth=sub.add_parser('configure-breadth-data',help='配置免费供应商广度参考；未知日期保留，保留原来源配置')
     breadth.add_argument('--username',required=True)
     args = parser.parse_args()
-    if args.command == "bootstrap":
+    if args.command == "desktop-ticket":
+        try:
+            print(issue_desktop_ticket())
+        except ValueError as exc:
+            parser.error(str(exc))
+    elif args.command == "bootstrap":
         password = sys.stdin.readline().rstrip("\r\n") if args.password_stdin else getpass.getpass("设置管理员密码: ")
         if not args.password_stdin and password != getpass.getpass("再次输入密码: "):
             parser.error("两次密码不一致。")

@@ -30,13 +30,12 @@
 python scripts/project.py verify-locks
 python scripts/project.py init --mode real --project tianyan-local --port 8088
 python scripts/project.py start
-python scripts/project.py bootstrap --username owner
 python scripts/project.py check
 ```
 
-在终端按提示为自己的管理员设定密码，再打开 [本机工作台](http://127.0.0.1:8088)。默认仅监听本机。8088 已被占用时，在首次初始化时指定其他空闲端口，并用该端口访问。日常启动和停止分别运行 `python scripts/project.py start` 和 `python scripts/project.py stop`。已初始化的实例沿用原目录与配置。
+Windows 用户双击桌面的「天衍系统」进入工作台，首次打开会自动建立本机工作空间。其他平台可运行 `python scripts/project.py bootstrap --username owner` 创建管理员，再打开 [本机工作台](http://127.0.0.1:8088)。默认仅监听本机。8088 已被占用时，在首次初始化时指定其他空闲端口，并用该端口访问。日常启动和停止分别运行 `python scripts/project.py start` 和 `python scripts/project.py stop`。已初始化的实例沿用原目录与配置。
 
-Windows 上完成管理员初始化后，桌面会出现带项目图标的「天衍系统」。保持 Docker 引擎运行，双击图标即可打开工作台；实例已停止时会先启动服务。已有实例可在源码目录运行 `python scripts/project.py shortcut` 补建快捷方式。保留解压目录，以便快捷方式找到启动脚本和图标。
+Windows 上首次启动成功后，桌面会出现带项目图标的「天衍系统」。保持 Docker 引擎运行，双击图标即可打开工作台；实例已停止时会先启动服务。已有实例可在源码目录运行 `python scripts/project.py shortcut` 补建快捷方式。保留解压目录，以便快捷方式找到启动脚本和图标。
 
 从 ZIP 安装时，启动器会对照 `source-manifest.json` 校验文件。也可以先运行 `python scripts/source_distribution.py check`。从 Git 安装时，启动器记录干净工作区的提交版本。
 

@@ -64,6 +64,10 @@ class Health(DTO):
     request_id: UUID
 
 
+class DesktopTicket(DTO):
+    ticket: str = Field(pattern=r"^[A-Za-z0-9_-]{64}$")
+
+
 class LoginInput(DTO):
     username: str = Field(min_length=1, max_length=80, pattern=r"^[a-zA-Z0-9_.-]+$")
     password: str = Field(min_length=1, max_length=1024)

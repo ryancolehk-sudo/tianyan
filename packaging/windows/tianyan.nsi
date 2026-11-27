@@ -34,8 +34,8 @@ VIAddVersionKey "LegalCopyright" "Tianyan contributors"
 
 !macro TianyanShortcuts
   CreateDirectory "$SMPROGRAMS\天衍系统"
-  CreateShortcut "$DESKTOP\天衍系统.lnk" "$INSTDIR\versions\${RELEASE_ID}\runtime\pythonw.exe" '-I -B -m app.native.launcher --config "$APPDATA\Tianyan\runtime.json"' "$INSTDIR\versions\${RELEASE_ID}\frontend\tianyan.ico" 0
-  CreateShortcut "$SMPROGRAMS\天衍系统\天衍系统.lnk" "$INSTDIR\versions\${RELEASE_ID}\runtime\pythonw.exe" '-I -B -m app.native.launcher --config "$APPDATA\Tianyan\runtime.json"' "$INSTDIR\versions\${RELEASE_ID}\frontend\tianyan.ico" 0
+  CreateShortcut "$DESKTOP\天衍系统.lnk" "$INSTDIR\versions\${RELEASE_ID}\runtime\pythonw.exe" '-I -B -m app.native.launcher --config "$APPDATA\Tianyan\runtime.json"' "$INSTDIR\versions\${RELEASE_ID}\frontend\tianyan-brand.ico" 0
+  CreateShortcut "$SMPROGRAMS\天衍系统\天衍系统.lnk" "$INSTDIR\versions\${RELEASE_ID}\runtime\pythonw.exe" '-I -B -m app.native.launcher --config "$APPDATA\Tianyan\runtime.json"' "$INSTDIR\versions\${RELEASE_ID}\frontend\tianyan-brand.ico" 0
 !macroend
 
 Function .onInit

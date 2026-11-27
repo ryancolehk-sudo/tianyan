@@ -14,7 +14,7 @@ from starlette.exceptions import HTTPException
 
 from app import schemas as s
 from app.access_logging import PrivateAccessLog as _PrivateOAuthAccessLog
-from app.auth import COOKIE, APIError, _dummy_hash, csrf, digest, hasher, login_allowed, principal, require_instance, require_origin, verify_password
+from app.auth import COOKIE, APIError, _dummy_hash, csrf, desktop_origin, desktop_ticket_hash, digest, hasher, login_allowed, principal, require_instance, require_origin, verify_password
 from app.config import settings
 from app.db import db_session
 from app.models import AuditEvent, InstanceState, Instrument, Job, LoginSession, LoginThrottle, Provider, User, WorkerHeartbeat
@@ -118,10 +118,15 @@ def login(body: s.LoginInput, request: Request, response: Response, db: Session 
         raise APIError(401, "invalid_credentials", "账号或密码不正确。")
     if hasher.check_needs_rehash(user.password_hash):
         user.password_hash = hasher.hash(body.password)
+    db.execute(delete(LoginThrottle).where(LoginThrottle.bucket == digest(f"user:{username}")))
+    return start_session(request, response, db, user)
+
+
+def start_session(request: Request, response: Response, db: Session, user: User):
+    from app.system_settings.service import audit
     old = request.cookies.get(COOKIE)
     if old:
         db.execute(update(LoginSession).where(LoginSession.token_hash == digest(old)).values(revoked_at=func.now()))
-    db.execute(delete(LoginThrottle).where(LoginThrottle.bucket == digest(f"user:{username}")))
     db.execute(delete(LoginSession).where(LoginSession.expires_at < datetime.now(UTC) - timedelta(days=1)))
     token, csrf_token = secrets.token_urlsafe(48), secrets.token_urlsafe(32)
     db.add(LoginSession(user_id=user.id, token_hash=digest(token), csrf_token=csrf_token,
@@ -134,6 +139,27 @@ def login(body: s.LoginInput, request: Request, response: Response, db: Session 
     from app.system_settings.service import preferences
     return envelope(request, {"user": s.User.model_validate(user), "csrf_token": csrf_token,
                               "cache_scope": cache_scope(db, user), "preferences": preferences(db, user)})
+
+
+@app.post("/api/v1/desktop-session", response_model=s.Envelope[s.Session], status_code=201,
+          responses={**AUTH_ERRORS, 403: {"model": s.Error}, 422: {"model": s.Error}}, operation_id="createDesktopSession")
+def desktop_session(request: Request, response: Response, body: s.DesktopTicket,
+                    db: Session = Depends(db_session)):
+    if request.headers.get("host") != desktop_origin():
+        raise APIError(403, "desktop_unavailable", "请使用本机桌面入口。")
+    require_origin(request)
+    require_instance(db)
+    user_id = db.scalar(delete(LoginSession).where(
+        LoginSession.token_hash == desktop_ticket_hash(body.ticket),
+        LoginSession.csrf_token == "",
+        LoginSession.revoked_at.is_(None),
+        LoginSession.expires_at > func.now(),
+    ).returning(LoginSession.user_id))
+    user = db.get(User, user_id) if user_id else None
+    if not user or not user.enabled or user.role != "admin":
+        raise APIError(401, "desktop_ticket_invalid", "桌面入口已过期，请重新双击桌面图标。")
+    response.headers["Cache-Control"] = "no-store"
+    return start_session(request, response, db, user)
 
 
 @app.get("/api/v1/session", response_model=s.Envelope[s.Session], responses=AUTH_ERRORS, operation_id="getSession")

@@ -1,5 +1,6 @@
 """Create the Windows desktop shortcut and open this local instance."""
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -35,7 +36,7 @@ for ($i = 1; ; $i++) {
     $link.TargetPath = $env:TIANYAN_LINK_PYTHON
     $link.Arguments = $arguments
     $link.WorkingDirectory = $env:TIANYAN_LINK_ROOT
-    $link.IconLocation = (Join-Path $env:TIANYAN_LINK_ROOT 'frontend\public\tianyan.ico') + ',0'
+    $link.IconLocation = (Join-Path $env:TIANYAN_LINK_ROOT 'frontend\public\tianyan-brand.ico') + ',0'
     $link.Save()
     break
 }
@@ -57,9 +58,12 @@ def open_instance():
     if not running.stdout.strip():
         start_instance()
     wait_ready(url)
-    if not webbrowser.open(url + "/workbench"):
-        print("请用浏览器打开 " + url + "/workbench")
-        input("按回车退出。")
+    ticket = compose("exec", "-T", "api", "python", "-m", "app.cli", "desktop-ticket",
+                     capture_output=True, text=True).stdout.strip()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{64}", ticket):
+        raise RuntimeError("无法打开本机工作空间，请检查实例状态。")
+    if not webbrowser.open(f"{url}/workbench#desktop_ticket={ticket}"):
+        raise RuntimeError("无法启动默认浏览器。")
 
 
 if __name__ == "__main__":
