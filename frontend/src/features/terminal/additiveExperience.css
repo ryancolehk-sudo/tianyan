@@ -11,13 +11,13 @@
 .ty-rank-update:empty{display:none}.ty-rank-update{padding:4px 10px}.ty-auction-additions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px}
 .ty-auction-additions [aria-pressed=true]{color:var(--ty-gold);border-color:var(--ty-gold)}
 .ty-terminal.ty-terminal-auction .ty-auction-days{overflow-x:auto;width:100%;box-sizing:border-box;grid-template-columns:repeat(4,minmax(210px,1fr))}
-.ty-terminal-auction .ty-auction-day h3,.ty-terminal-auction .ty-auction-node-head{position:sticky;top:0;background:var(--ui-surface,#101c25);z-index:1}
+.ty-terminal-auction .ty-auction-day h3,.ty-terminal-auction .ty-auction-node-head{position:sticky;top:0;background:var(--ui-surface,var(--color-background-primary-default));z-index:1}
 .auction-ranking-scroll{max-height:360px;overflow:auto}.ty-observation-ranking{margin-top:12px}
-.dr-additive{margin-top:14px;border-top:1px solid var(--ui-border,#33434b);padding-top:10px;min-width:0}.dr-additive>summary{cursor:pointer;color:var(--ty-gold,#d9af58)}
-.dr-additive .dr-comparison-scroll{max-height:340px;overflow:auto}.dr-additive .dr-plan-scenario{padding:10px;border:1px solid var(--ui-border,#33434b);margin:8px 0}.dr-additive .dr-comparison{min-width:0}.dr-additive select{max-width:100%}
+.dr-additive{margin-top:14px;border-top:1px solid var(--ui-border,var(--color-border-primary));padding-top:10px;min-width:0}.dr-additive>summary{cursor:pointer;color:var(--ty-gold,var(--color-accent-600))}
+.dr-additive .dr-comparison-scroll{max-height:340px;overflow:auto}.dr-additive .dr-plan-scenario{padding:10px;border:1px solid var(--ui-border,var(--color-border-primary));margin:8px 0}.dr-additive .dr-comparison{min-width:0}.dr-additive select{max-width:100%}
 .rw-root,.ty-observation-ranking,.dr-additive{font-variant-numeric:tabular-nums}.rw-root button,.ty-auction-additions button,.ty-terminal .ty-text-button{transition:background-color 120ms,color 120ms,border-color 120ms}
-.rw-root :focus-visible,.ty-auction-additions :focus-visible,.dr-additive :focus-visible{outline:2px solid var(--ty-gold,#d9af58);outline-offset:2px}
-.rw-root .ty-table [data-current],.ty-observation-ranking [data-current]{background:#d9af5817}
+.rw-root :focus-visible,.ty-auction-additions :focus-visible,.dr-additive :focus-visible{outline:2px solid var(--ty-gold,var(--color-accent-500));outline-offset:2px}
+.rw-root .ty-table [data-current],.ty-observation-ranking [data-current]{background:color-mix(in srgb, var(--color-accent-50) 9%, transparent)}
 .rw-root .ty-table th,.ty-observation-ranking th{text-align:right}.rw-root .ty-table th:first-child,.ty-observation-ranking th:first-child{text-align:left}
 .rw-root .ty-table td,.ty-observation-ranking td{font-variant-numeric:tabular-nums}.ty-observation-ranking td{min-height:32px}.ty-observation-ranking td:last-child{text-align:right}
 @media(max-width:1439px){.ty-terminal.ty-terminal-auction .ty-auction-days{display:flex}.ty-terminal.ty-terminal-auction .ty-auction-day{flex:0 0 calc(50% - 2.5px);min-width:280px}}

@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import './flowBalance.css';
 import { Panel, Change, Empty } from './Components';
 import { signedMoney, time, tone } from './data';
 import { useWorkspaceState } from '../../shared/workspaceState';
@@ -5,8 +7,8 @@ import type { WorkbenchData } from './types';
 import type { ThsCategory } from './thsFundsData';
 
 type SortKey = 'name' | 'main_net_cny' | 'pct_change';
-export function OverviewFunds({data, user, cutoff, onSelect}: {
-  data: WorkbenchData; user: string; cutoff: string; onSelect: (code: string) => void;
+export function OverviewFunds({data, user, cutoff, onSelect, render}: {
+  data: WorkbenchData; user: string; cutoff: string; onSelect: (code: string) => void; render: (balance: ReactNode, ranking: ReactNode) => ReactNode;
 }) {
   const funds = data.intraday_funds;
   const key = `${user}:overview-funds:${funds?.trade_day ?? data.trade_day}:${cutoff}`;
@@ -20,6 +22,8 @@ export function OverviewFunds({data, user, cutoff, onSelect}: {
     const comparison=typeof av==='number'&&typeof bv==='number'?av-bv:String(av).localeCompare(String(bv),'zh-CN');
     return (sort.ascending?comparison:-comparison)||a.code.localeCompare(b.code);
   });
+  // A category-wide scale keeps bars comparable while sorting and searching.
+  const maxNet = rows.reduce((largest, row) => Math.max(largest, Math.abs(row.main_net_cny ?? 0)), 0);
   const shown=rows.filter(row=>row.name.includes(search.trim())||row.code.includes(search.trim()));
   const coverage = funds?.coverage?.find(row => row.category === category);
   const note = funds?.category_notes?.[category];
@@ -28,7 +32,29 @@ export function OverviewFunds({data, user, cutoff, onSelect}: {
     <button className="ty-rank-sort" onClick={()=>setSort({key:field,ascending:sort.key===field?!sort.ascending:false})} title={`按${label}${sort.key===field&&!sort.ascending?'升':'降'}序`}>
       {label}{sort.key===field&&<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" style={{transform:sort.ascending?'rotate(180deg)':undefined}}><path d="M6 1v9m-3-3 3 3 3-3"/></svg>}
     </button></th>;
-  return <Panel title="资金流向" subtitle="同花顺 · 亿元" className="ty-overview-funds"
+  const ordered=rows.filter(row=>row.main_net_cny!=null && Number.isFinite(row.main_net_cny))
+    .sort((a,b)=> b.main_net_cny! - a.main_net_cny! || a.code.localeCompare(b.code));
+  const inflows=ordered.filter(row=>row.main_net_cny!>0).slice(0,5);
+  const outflows=ordered.filter(row=>row.main_net_cny!<0).reverse().slice(0,5);
+  const entry=(row:typeof rows[number] | undefined, side:'in'|'out') => row ? <button type="button" className={'flow-entry flow-'+side}
+    aria-pressed={row.code===data.selected_sector_code} onClick={()=>onSelect(row.code)}
+    title={row.name+' '+signedMoney(row.main_net_cny,2)+'亿元'}>
+    <span><b>{row.name}</b><strong>{signedMoney(row.main_net_cny,2)}</strong></span>
+    <i aria-hidden="true" style={{width:Math.abs(row.main_net_cny!)/maxNet*100+'%'}}/>
+  </button> : <div className="flow-absent"/>;
+  const balance = <Panel title="板块净流入／净流出" subtitle="亿元" className="ty-flow-balance">
+    <div className="flow-tools"><div className="ty-stage-switch" aria-label="净额图分类">{(['industry','concept'] as const).map(k=><button type="button" key={k}
+      aria-pressed={category===k} onClick={()=>setCategory(k)}>{k==='industry'?'行业':'概念'}</button>)}</div><small>同花顺 · {time(coverage?.received_at)}</small></div>
+    <div className="flow-directions"><b>净流入前五</b><b>净流出前五</b></div>
+    {ordered.length ? <div className="flow-pairs" role="group" aria-label="板块净额对照图">
+      {Array.from({length:5},(_,i)=><div key={i} className="flow-pair">{entry(inflows[i],'in')}{entry(outflows[i],'out')}</div>)}
+      {!inflows.length && <small className="flow-none left">无净流入板块</small>}
+      {!outflows.length && <small className="flow-none right">无净流出板块</small>}
+    </div>:<Empty title="当日暂无板块净额"/>}
+    <div className="flow-axis"><span>{maxNet ? signedMoney(maxNet,2) : '—'}</span><span>0</span><span>{maxNet ? signedMoney(-maxNet,2) : '—'}</span></div>
+    <div className="ty-stage-foot"><span>{ordered.length} 个{category==='industry'?'行业':'概念'}有净额</span><span>{coverage?.complete?'':'已收录范围'}</span></div>
+  </Panel>;
+  const ranking = <Panel title="资金流向" subtitle="同花顺 · 亿元" className="ty-overview-funds"
     action={<div className="ty-overview-tabs" role="group" aria-label="资金板块分类">{(['industry','concept'] as const).map(value =>
       <button key={value} type="button" aria-pressed={category === value} onClick={() => setCategory(value)}>{value === 'industry' ? '行业' : '概念'}</button>)}</div>}>
     <section className="ty-overview-funds-rank" aria-label="同花顺资金排名">
@@ -37,7 +63,12 @@ export function OverviewFunds({data, user, cutoff, onSelect}: {
         {shown.map((row,index)=><tr key={row.code} data-current={row.code===data.selected_sector_code||undefined}>
           <td className="ty-muted">{index+1}</td>
           <td><button className="ty-text-button" type="button" title={row.name} aria-pressed={row.code===data.selected_sector_code} onClick={()=>onSelect(row.code)}>{row.name}</button></td>
-          <td className={tone(row.main_net_cny)}>{signedMoney(row.main_net_cny)}</td><td><Change value={row.pct_change}/></td>
+          <td className={tone(row.main_net_cny)}>
+            <span className="ty-net-value">{signedMoney(row.main_net_cny)}</span>
+            {row.main_net_cny != null && maxNet > 0 && <span className="ty-net-track" aria-hidden="true">
+              <i style={{width: Math.abs(row.main_net_cny) / maxNet * 50 + '%'}}/>
+            </span>}
+          </td><td><Change value={row.pct_change}/></td>
         </tr>)}
       </tbody></table>{!shown.length&&<Empty title={rows.length?'无匹配板块':'暂无已存板块资金'}/>}</div>
     </section>
@@ -46,4 +77,5 @@ export function OverviewFunds({data, user, cutoff, onSelect}: {
     </div>
     {note&&!staleOnly&&<p className="ty-overview-warning" role="status">{note}</p>}
   </Panel>;
+  return render(balance, ranking);
 }

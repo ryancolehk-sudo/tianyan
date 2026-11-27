@@ -1,0 +1,223 @@
+/* The five overview panes use one palette; exchange moves retain their own colours. */
+#overview-board {
+  --board-base: var(--color-background-primary-default);
+  --board-raised: var(--color-background-secondary-default);
+  --board-control: var(--color-background-primary-hover);
+  --board-selected: var(--color-accent-50);
+  --board-accent: var(--color-accent-600);
+  --board-ring: var(--color-accent-200);
+  --ty-ink: var(--color-text-primary);
+  --ty-text: var(--ty-ink);
+  --ty-muted: var(--color-text-secondary);
+  --ty-dim: var(--color-text-tertiary);
+  --ty-up: var(--board-market-up);
+  --ty-down: var(--board-market-down);
+  --ty-line: var(--color-border-primary);
+  --ty-line-soft: var(--color-border-secondary);
+  --ty-gold: var(--board-accent);
+  --ty-gold-bright: var(--color-accent-600);
+  --ui-up: var(--ty-up);
+  --ui-down: var(--ty-down);
+  --ui-panel: var(--board-base);
+  --ui-hover: var(--board-control);
+  --ui-accent: var(--board-accent);
+  --ui-accent-bright: var(--ty-gold-bright);
+  color: var(--ty-ink);
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+#overview-board > .ty-market-ribbon {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr)) minmax(85px,.8fr) minmax(150px,1.3fr) minmax(120px,.85fr) minmax(140px,1.2fr);
+  align-items: stretch;
+  padding: 0;
+  gap: 5px;
+  background: transparent;
+  border: 0;
+  margin: 0 0 5px;
+}
+#overview-board .ty-market-ribbon > div {
+  min-width: 0;
+  max-width: none;
+  padding: 6px 11px;
+  border: 1px solid var(--ty-line-soft);
+  border-radius: 9px;
+  background: var(--board-base);
+}
+#overview-board .ty-index {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-content: center;
+  gap: 0 4px;
+}
+#overview-board .ty-index b { font-size: 12px; font-weight: 550; }
+#overview-board .ty-index small { grid-area: 1 / 2; font-size: 11px; color: var(--ty-muted); }
+#overview-board .ty-index strong { grid-column: 1 / -1; font-size: 19px; line-height: 1.15; letter-spacing: -.02em; }
+#overview-board .ty-market-ribbon > .ty-ribbon-turnover { flex-direction: column; justify-content: center; align-items: flex-start; gap: 1px; color: var(--ty-muted); }
+#overview-board .ty-ribbon-turnover strong { color: var(--ty-ink); font-size: 17px; }
+#overview-board .ty-market-ribbon > .ty-market-breadth { display: flex; justify-content: center; align-items: stretch; flex-direction: column; gap: 5px; }
+#overview-board .ty-market-breadth .ty-distribution { border-radius: 10px; height: 5px; overflow: hidden; }
+#overview-board .ty-market-ribbon > .ty-ribbon-stat { justify-content: center; gap: 6px; }
+#overview-board .ty-ribbon-stat .ty-up { color: var(--ty-up); }
+#overview-board .ty-ribbon-stat .ty-down { color: var(--ty-down); }
+#overview-board .ty-market-ribbon > .ty-ribbon-stat { flex-wrap: wrap; align-content: center; row-gap: 1px; }
+#overview-board .ty-ribbon-stat small { max-width: 100%; white-space: normal; text-align: center; }
+#overview-board .ty-market-ribbon > .ty-ribbon-stamp { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 3px 6px; color: var(--ty-muted); white-space: normal; }
+#overview-board .ty-ribbon-stamp[data-retry] { border-color: var(--board-warning); color: var(--board-warning); }
+#overview-board .ty-ribbon-stamp b { color: inherit; }
+#overview-board .ty-workspace-switch {
+  align-self: flex-start;
+  max-width: 100%;
+  gap: 2px;
+  padding: 2px;
+  min-height: 0;
+  margin: 0 0 6px;
+  border: 1px solid var(--ty-line-soft);
+  background: var(--board-base);
+  border-radius: 9px;
+}
+#overview-board .ty-workspace-switch button { min-height: 26px; padding: 3px 12px; border: 0; border-radius: 6px; background: transparent; color: var(--ty-muted); }
+#overview-board .ty-workspace-switch button[aria-pressed=true] { background: var(--board-selected); color: var(--ty-gold-bright); font-weight: 650; box-shadow: none; }
+#overview-board :is(.ty-panel,.ty-coverage) {
+  background: var(--board-base);
+  color: var(--ty-ink);
+  border: 1px solid var(--ty-line);
+  border-radius: 10px;
+}
+#overview-board .ty-panel-head {
+  background: var(--board-base);
+  border-bottom: 1px solid var(--ty-line-soft);
+  border-radius: 10px 10px 0 0;
+  padding-inline: 8px;
+  min-height: 30px;
+}
+#overview-board .ty-panel-head::before { content: none; }
+#overview-board .ty-panel-head h2 { color: var(--ty-ink); font-size: 14px; font-weight: 650; }
+#overview-board :is(.ty-panel-subtitle,.ty-panel-head time,.ty-overview-source,.ty-theme-text,.ty-distribution-count,.ty-panel-caption) { color: var(--ty-dim); }
+#overview-board :is(.ty-table-scroll,.ty-stage-list,.ty-mini-ladder-body,.rw-table-scroll,.ty-workspace-scroll) {
+  scrollbar-color: var(--color-border-primary) var(--board-base);
+}
+#overview-board .ty-table { border-collapse: separate; border-spacing: 0; }
+#overview-board .ty-table th { background: var(--board-raised); color: var(--ty-muted); border-color: var(--ty-line-soft); font-weight: 500; }
+#overview-board .ty-table td { border-color: var(--ty-line-soft); border-inline: 0; }
+#overview-board .ty-table tbody tr { background: transparent; }
+#overview-board .ty-table tbody tr:hover { background: var(--board-control); }
+#overview-board .ty-table tbody tr[data-current] { background: var(--board-selected); box-shadow: inset 3px 0 var(--board-accent); }
+#overview-board :is(input:not([type=checkbox],[type=radio]),select,textarea) {
+  border: 1px solid var(--ty-line);
+  border-radius: 6px;
+  color: var(--ty-ink);
+  background: var(--board-raised);
+}
+#overview-board input::placeholder { color: var(--ty-dim); }
+#overview-board :is(.ty-button,.rw-tabs button,.rw-mobile-nav button,.ty-overview-tabs button,.ty-stage-switch button,.ty-rank-tools button) {
+  background: var(--board-raised);
+  border: 1px solid var(--ty-line);
+  color: var(--ty-muted);
+  border-radius: 6px;
+}
+#overview-board :is(.ty-button-gold,.rw-tabs button[aria-pressed=true],.rw-mobile-nav button[aria-pressed=true],.ty-overview-tabs button[aria-pressed=true],.ty-stage-switch button[aria-pressed=true]) {
+  background: var(--board-selected);
+  border-color: var(--board-ring);
+  color: var(--ty-gold-bright);
+}
+#overview-board button:disabled { opacity: .6; }
+#overview-board input:is([type=checkbox],[type=radio]) { accent-color: var(--board-accent); }
+#overview-board :is(button,select,input,textarea,summary,a,[tabindex]):focus-visible { outline: 2px solid var(--board-accent); outline-offset: -2px; }
+#overview-board .ty-distribution-row > div { height: 6px; border-radius: 5px; background: var(--board-control); }
+#overview-board .ty-distribution-row i { border-radius: inherit; }
+#overview-board .ty-market-distribution { padding: 1px 8px 0; border-color: var(--ty-line-soft); }
+#overview-board .ty-market-distribution h3,
+#overview-board .ty-emotion-heading h3 { font-weight: 600; }
+#overview-board .ty-chart-grid line { stroke: var(--ty-line); }
+#overview-board :is(.ty-chart-grid text,.ty-tick) { fill: var(--ty-dim); }
+#overview-board .ty-emotion-band rect { opacity: .06; }
+#overview-board .ty-emotion-heading, #overview-board .ty-fund-legend { padding-block: 2px; }
+#overview-board .ty-stage-switch { border-color: var(--ty-line-soft); background: var(--board-raised); }
+#overview-board .ty-stage-switch button { border-color: transparent; background: transparent; }
+#overview-board .ty-stage-row[data-active] { background: var(--board-selected); }
+#overview-board .ty-overview-strength-list { --stage-track: var(--color-background-primary-hover); }
+#overview-board .ty-stage-limit[data-positive] { color: var(--board-market-up); }
+#overview-board .ty-stage-foot { border-color: var(--ty-line-soft); }
+#overview-board .ty-mini-ladder-row { border-color: var(--ty-line-soft); }
+#overview-board .ty-mini-ladder-row > div:first-child { background: transparent; border: 0; }
+#overview-board .ty-mini-ladder-row > div:first-child strong { padding: 2px 6px; border-radius: 5px; color: var(--board-accent); background: var(--board-selected); }
+#overview-board .ty-mini-ladder-stocks { gap: 3px; padding: 3px 5px; }
+#overview-board .ty-mini-ladder-stocks button { background: var(--board-raised); border: 1px solid transparent; border-radius: 6px; }
+#overview-board .ty-mini-ladder-stocks button:hover { border-color: var(--board-ring); }
+#overview-board .ty-mini-ladder-stocks button[aria-pressed=true] { background: var(--board-selected); border-color: var(--board-ring); }
+#overview-board .ty-mini-ladder-stocks button small { color: var(--ty-dim); }
+#overview-board .ty-overview-funds-rank td:has(.ty-net-value) { position: relative; text-align: right; }
+#overview-board .ty-net-value { position: relative; z-index: 1; }
+#overview-board .ty-net-track { position: absolute; inset: auto 4px 1px; height: 2px; pointer-events: none; }
+#overview-board .ty-net-track::before { position: absolute; left: 50%; bottom: 0; height: 4px; width: 1px; content: ''; background: var(--color-background-secondary-default); }
+#overview-board .ty-net-track i { position: absolute; left: 50%; height: 100%; background: currentColor; border-radius: 3px; opacity: .8; }
+#overview-board .ty-down .ty-net-track i { left: auto; right: 50%; }
+#overview-board :is(.rw-quote,.ty-screening-selector,.ty-screening-context,.ai-action-result,.ai-action-evidence) {
+  background: var(--board-raised);
+  border-color: var(--ty-line-soft);
+  border-radius: 8px;
+}
+#overview-board .rw-sectors > h3 { background: var(--board-base); border-color: var(--ty-line-soft); }
+#overview-board :is(.rw-quote strong,.ty-screening-condition-title strong,.ty-coverage-list strong) { color: var(--ty-ink); }
+#overview-board :is(.ty-screening-condition,.ty-replay-controls,.ai-action,.ty-coverage-list > div) { border-color: var(--ty-line-soft); }
+#overview-board .ty-screening-condition { background: var(--board-raised); border-radius: 7px; }
+#overview-board .ty-coverage > summary { padding: 8px 12px; border-radius: 9px; background: var(--board-raised); color: var(--ty-ink); }
+#overview-board :is(.ty-screening-draft,.ai-reference-badge) { color: var(--board-accent); }
+#overview-board .ty-ai-overview > h3 { margin-inline: 10px; color: var(--ty-ink); }
+@media (max-width: 1199px) {
+  #overview-board > .ty-market-ribbon { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  #overview-board .ty-market-ribbon > .ty-market-breadth { grid-column: span 2; }
+}
+@media (max-width: 600px) {
+  #overview-board > .ty-market-ribbon { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  #overview-board .ty-market-ribbon > div { padding: 5px 6px; }
+  #overview-board .ty-index b { font-size: 11px; }
+  #overview-board .ty-index small { font-size: 10px; }
+  #overview-board .ty-index strong { font-size: 16px; }
+  #overview-board .ty-market-ribbon > .ty-market-breadth { grid-column: auto; }
+  #overview-board .ty-market-ribbon > .ty-ribbon-stamp { grid-column: 1 / -1; flex-direction: row; min-height: 20px; }
+  #overview-board .ty-workspace-switch { overflow-x: auto; }
+  #overview-board .ty-workspace-switch button { flex: none; padding-inline: 7px; }
+}
+
+#overview-board .rw-root {
+  --ui-surface: var(--board-base);
+  --ui-canvas: var(--board-base);
+  --ui-muted: var(--ty-muted);
+}
+#overview-board :is(.rw-desktop-detail,.rw-sectors) h3 { color: var(--ty-ink); }
+#overview-board .ty-ai-overview .ai-action { padding: 8px 12px; }
+#overview-board .ai-action-toolbar button {
+  border: 1px solid var(--board-ring);
+  background: var(--board-selected);
+  color: var(--ty-gold-bright);
+  border-radius: 6px;
+}
+#overview-board .ai-reference-badge { border-color: var(--board-ring); border-radius: 20px; }
+#overview-board .ai-action a { color: var(--board-accent); }
+#overview-board .ai-action-result { padding: 4px 10px; }
+#overview-board .ty-coverage-list > div { background: var(--board-raised); border-radius: 8px; }
+#overview-board .ty-coverage-list small { color: var(--ty-dim); }
+#overview-board .ty-coverage-list > div > span { align-self: start; font-weight: 550; }
+@media (max-width: 360px) {
+  #overview-board .ty-market-ribbon > .ty-ribbon-stat { gap: 2px; padding-inline: 3px; }
+  #overview-board .ty-ribbon-stat strong { font-size: 14px; }
+}
+
+.ty-shell.ty-overview-shell { --ui-accent:var(--color-accent-600); --ui-accent-bright:var(--color-accent-600); --ui-line:var(--color-border-primary); background:var(--color-background-primary-default); }
+.ty-shell.ty-overview-shell :is(.ty-sidebar,.ty-topbar,.ty-tabbar) { background:var(--color-background-primary-default); border-color:var(--color-border-primary); }
+.ty-shell.ty-overview-shell .ty-shell-workspace { background:var(--color-background-primary-default); }
+.ty-shell.ty-overview-shell .ty-sidebar .nav-link.active, .ty-shell.ty-overview-shell .ty-tabbar > nav > a.selected {
+  background:var(--color-accent-50); color:var(--color-text-primary); border-color:var(--color-accent-200);
+}
+.ty-shell.ty-overview-shell .ty-tabbar > nav > a.selected::after { background:var(--color-accent-50); }
+.ty-shell.ty-overview-shell .ty-topbar .ty-current-stock { color:var(--color-text-primary); background:var(--color-background-primary-default); border-color:var(--color-border-primary); }
+#overview-board .ty-overview-strength-list { background:var(--board-base); border-color:var(--ty-line); }
+#overview-board .ty-stage-heading :is(strong,small), #overview-board .ty-stage-value { color:var(--ty-ink); }
+#overview-board .ty-stage-columns { color:var(--ty-muted); }
+#overview-board .ty-stage-list .ty-stage-row[data-active] { background:var(--board-selected); }
+#overview-board .ty-stage-tools input { background:var(--board-raised); color:var(--ty-ink); }
+#overview-board .ty-stage-switch { background:var(--board-raised); }
+#overview-board .ty-stage-switch [aria-pressed=true] { background:var(--board-selected); color:var(--ty-gold-bright); }

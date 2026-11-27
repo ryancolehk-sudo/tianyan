@@ -30,7 +30,7 @@
 .ty-terminal.ty-terminal-overview .ty-panel-caption { padding: 6px var(--overview-inset); line-height: 1.5; overflow-wrap: anywhere; }
 .ty-terminal.ty-terminal-overview .ty-table { font-size: 13px; line-height: 20px; }
 .ty-terminal.ty-terminal-overview .ty-table :is(th, td) { padding: 4px 8px; }
-.ty-terminal.ty-terminal-overview .ty-table th { font-size: 12px; background: #15232d; }
+.ty-terminal.ty-terminal-overview .ty-table th { font-size: 12px; background: var(--color-background-secondary-default); }
 .ty-terminal.ty-terminal-overview .ty-rank-table :is(th, td):nth-child(3),
 .ty-terminal.ty-terminal-overview .ty-rank-table :is(th, td):nth-child(4) { text-align: right; }
 .ty-terminal.ty-terminal-overview .ty-rank-table .ty-stock-name { font-size: 13px; }

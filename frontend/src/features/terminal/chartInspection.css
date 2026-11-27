@@ -1,16 +1,16 @@
 .ty-chart { touch-action: pan-y pinch-zoom; }
 .ty-chart > svg:focus:not(:focus-visible) { outline: none; }
-.ty-chart > svg:focus-visible { outline: 2px solid var(--ui-focus, #f5d99a); outline-offset: -2px; }
-.ty-chart-reference line { stroke: var(--ui-secondary, #92a8b8); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.ty-chart > svg:focus-visible { outline: 2px solid var(--ui-focus, var(--color-accent-500)); outline-offset: -2px; }
+.ty-chart-reference line { stroke: var(--ui-secondary, var(--color-accent-600)); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
 .ty-chart-reference .ty-chart-reference-horizontal { opacity: .45; }
-.ty-chart-reference circle { fill: var(--ui-panel, #111e27); stroke-width: 2; vector-effect: non-scaling-stroke; }
-.ty-chart-readout { position: absolute; top: 12px; z-index: 3; width: max-content; max-width: min(280px, calc(100% - 24px)); padding: 10px 12px; color: var(--ui-ink, #e7eef4); background: #172631f5; border-radius: 5px; box-shadow: 0 6px 18px #0005; pointer-events: none; font: 12px/1.5 var(--ui-font, sans-serif); font-variant-numeric: tabular-nums; }
+.ty-chart-reference circle { fill: var(--ui-panel, var(--color-text-primary)); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.ty-chart-readout { position: absolute; top: 12px; z-index: 3; width: max-content; max-width: min(280px, calc(100% - 24px)); padding: 10px 12px; color: var(--ui-ink, var(--color-text-primary)); background: color-mix(in srgb, var(--color-background-primary-default) 96%, transparent); border-radius: 5px; box-shadow: 0 6px 18px rgb(25 28 36 / 0.14); pointer-events: none; font: 12px/1.5 var(--ui-font, sans-serif); font-variant-numeric: tabular-nums; }
 .ty-chart-readout[data-side=left] { left: 12px; }
 .ty-chart-readout[data-side=right] { right: 12px; }
 .ty-chart-readout-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .ty-chart-readout-heading strong { font-weight: 600; }
-.ty-chart-readout-heading > span, .ty-chart-readout > small { color: var(--ui-muted, #aabcc9); font-size: 11px; }
-.ty-chart-readout-subject { margin-top: 3px; color: var(--ui-muted, #aabcc9); overflow-wrap: anywhere; }
+.ty-chart-readout-heading > span, .ty-chart-readout > small { color: var(--ui-muted, var(--color-text-secondary)); font-size: 11px; }
+.ty-chart-readout-subject { margin-top: 3px; color: var(--ui-muted, var(--color-text-secondary)); overflow-wrap: anywhere; }
 .ty-chart-readout dl { margin: 6px 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; }
 .ty-chart-readout dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; }
 .ty-chart-readout dt { display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; }

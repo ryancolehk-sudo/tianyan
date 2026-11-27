@@ -1,3 +1,4 @@
+import './overviewBoard.css';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { updateLocation, useNavigation } from '../../shared/navigation';
 import { AIOverview, Coverage, MarketRibbon } from './Components';
@@ -30,7 +31,7 @@ export function OverviewWorkspace(props: PageProps & {fundsData: WorkbenchData; 
     url.searchParams.set('research_scope', 'all'); url.searchParams.set('research_detail', '1');
     url.searchParams.delete('instrument'); url.hash = ''; updateLocation(url);
   }
-  return <div className="ty-overview-screen">
+  return <div id="overview-board" className="ty-overview-screen">
     <MarketRibbon data={props.data} asOfTime={props.asOfTime}/>
     <nav className="ty-workspace-switch" aria-label="综合盯盘工作区">{panes.map(([key,label]) => <button key={key} type="button" aria-pressed={pane === key} aria-controls={'overview-pane-'+key} onClick={() => choose(key)}>{label}</button>)}</nav>
     <div className="ty-workspace-panes">

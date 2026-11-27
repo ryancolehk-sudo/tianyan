@@ -113,11 +113,14 @@ export function KplStrengthWorkspace({day, cutoff, user, csrf, compact = false, 
   const error = read.error&&<p className="ty-panel-caption" role="alert">开盘啦读取失败{read.data?'，保留上次已读记录':''} <button className="ty-link" onClick={read.reload}>重试</button></p>;
   if (overview) return <>
     <Panel title="市场全景" subtitle="开盘啦情绪 · 题材强度" className="ty-overview-strength">
-      <div className="ty-strength-split ty-market-composition"><MarketDistribution stocks={stocks} day={day}/><div className="ty-market-center"><MarketEmotion day={day} cutoff={cutoff} user={user}/>{plot}</div><section className="ty-kpl-top-ten" aria-label="开盘啦题材强度前10">
-        <h3>开盘啦题材强度</h3>{fastTop&&<span className="ty-panel-caption" title="独立第一页前十接收采样；完整榜保持各自时间">前十接收 {time(fastTop.received_at)}</span>}<KplStrengthRanks rows={topRows.map((row,i)=>({...row,rank:i+1}))}/>
-      </section></div>{source}{error}
+      <div className="ty-strength-split ty-market-composition"><MarketDistribution stocks={stocks} day={day}/><div className="ty-market-center"><MarketEmotion day={day} cutoff={cutoff} user={user}/>{plot}</div></div>{source}{error}
     </Panel>
-    <Panel title="强度排名" className="ty-overview-strength-list">{filter}</Panel>
+    <Panel title="强度排名" className="ty-overview-strength-list">
+      <section className="ty-kpl-top-ten" aria-label="开盘啦题材强度前10">
+        {fastTop&&<span className="ty-panel-caption" title="独立第一页前十接收采样；完整榜保持各自时间">前十接收 {time(fastTop.received_at)}</span>}<KplStrengthRanks rows={topRows.map((row,i)=>({...row,rank:i+1}))}/>
+      </section>
+      <details className="ty-strength-controls"><summary>查找题材</summary>{filter}</details>
+    </Panel>
   </>;
   return <>
     <div className="ty-strength-chart-workspace ty-kpl-strength-workspace">{filter}{plot}</div>

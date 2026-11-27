@@ -98,7 +98,7 @@ function Clock() {
 
 export function Shell(props: PropsWithChildren<{ path: string; navigationSequence: number; session: SessionResponse; onLogout: () => void }>) {
   useEffect(installDetailsDismissal, []);
-  const modern = props.path === '/system' || props.path === '/research/tomorrow' || ((props.path === '/workbench' || props.path === '/auction' || props.path === '/news') && new URLSearchParams(location.search).get('legacy') !== '1') || isDailyReview(props.path, location.search);
+  const modern = props.path === '/system' || props.path === '/data' || props.path === '/research/tomorrow' || ((props.path === '/workbench' || props.path === '/auction' || props.path === '/news') && new URLSearchParams(location.search).get('legacy') !== '1') || isDailyReview(props.path, location.search);
   return modern ? <TerminalShell {...props}/> : <LegacyShell {...props}/>;
 }
 function LegacyShell({ path, navigationSequence, session, onLogout, children }: PropsWithChildren<{ path: string; navigationSequence: number; session: SessionResponse; onLogout: () => void }>) {

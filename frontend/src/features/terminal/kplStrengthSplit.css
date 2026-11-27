@@ -8,13 +8,13 @@
 .ty-kpl-top-ten .dir-strength-row{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(16px,.55fr) 56px;align-items:center;gap:5px;flex:1;min-height:28px;border-bottom:1px solid var(--ty-line)}
 .ty-kpl-top-ten .dir-strength-row:last-child{border-bottom:0}
 .ty-kpl-top-ten .dir-rank{display:inline-grid;place-items:center;width:20px;height:22px;border-radius:3px;color:var(--ty-muted);font-size:12px}
-.ty-kpl-top-ten .dir-rank-1{background:#cfad6c;color:#151a1c;font-weight:700}
-.ty-kpl-top-ten .dir-rank-2{background:#624f32;color:#f1d39d;font-weight:700}
-.ty-kpl-top-ten .dir-rank-3{background:#3c3528;color:#d7bb82;font-weight:700}
+.ty-kpl-top-ten .dir-rank-1{background:var(--color-background-secondary-default);color:var(--color-text-primary);font-weight:700}
+.ty-kpl-top-ten .dir-rank-2{background:var(--color-background-secondary-default);color:var(--color-accent-600);font-weight:700}
+.ty-kpl-top-ten .dir-rank-3{background:var(--color-background-secondary-default);color:var(--color-accent-600);font-weight:700}
 .ty-kpl-top-ten .dir-strength-name{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ty-kpl-top-ten .dir-strength-track{height:6px;background:#2b3335;border-radius:2px;overflow:hidden}
-.ty-kpl-top-ten .dir-strength-track>i{height:100%;background:linear-gradient(90deg,#736346,#d0ad68);display:block;border-radius:2px}
-.ty-kpl-top-ten .dir-strength-value{font:600 13px 'Segoe UI',sans-serif;font-variant-numeric:tabular-nums;color:#e5c589;text-align:right}
+.ty-kpl-top-ten .dir-strength-track{height:6px;background:var(--color-background-secondary-default);border-radius:2px;overflow:hidden}
+.ty-kpl-top-ten .dir-strength-track>i{height:100%;background:var(--color-background-secondary-default);display:block;border-radius:2px}
+.ty-kpl-top-ten .dir-strength-value{font:600 13px 'Segoe UI',sans-serif;font-variant-numeric:tabular-nums;color:var(--color-accent-600);text-align:right}
 @media(max-width:700px){
   .ty-overview-strength>.ty-strength-split{grid-template-columns:minmax(0,1fr);overflow:visible}
   .ty-terminal.ty-terminal-overview .ty-overview-market-grid{grid-template-rows:660px 300px 320px 260px auto}

@@ -4,10 +4,10 @@
 .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel{min-width:0}
 .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-head{min-height:44px;flex-wrap:wrap;gap:6px 12px}
 .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-head h2{font-size:16px}
-.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-subtitle,.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-action{font-size:12px;color:#aabcc9}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-subtitle,.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-panel-action{font-size:12px;color:var(--color-text-secondary)}
 .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-chart-workspace{grid-template-columns:225px minmax(0,1fr);gap:10px;padding:10px}
 .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-filter{font-size:13px}
-.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-heading{font-size:12px;color:#aabcc9}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-heading{font-size:12px;color:var(--color-text-secondary)}
 .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-search{font-size:13px;min-height:34px;margin:8px 0}
 .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-list{max-height:180px}
 .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-row{min-height:36px;line-height:18px;grid-template-columns:16px minmax(0,1fr) auto;gap:5px}
@@ -21,32 +21,32 @@
 .ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel>.ty-chart{flex:1;display:flex;align-items:center;min-height:250px}
 .ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel .ty-breadth-notes{margin-top:auto;font-size:12px}
 .ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel .ty-panel-label{flex-wrap:wrap}
-.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-source{border-top:1px solid #29414e;display:flex;justify-content:space-between;align-items:start;gap:8px;padding:9px 12px;font-size:12px;color:#aabcc9;flex-wrap:wrap}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-source{border-top:1px solid var(--color-border-primary);display:flex;justify-content:space-between;align-items:start;gap:8px;padding:9px 12px;font-size:12px;color:var(--color-text-secondary);flex-wrap:wrap}
 .ty-terminal.ty-terminal-overview .ty-overview-source details{max-width:65ch}
-.ty-terminal.ty-terminal-overview .ty-overview-source summary,.ty-terminal.ty-terminal-overview .ty-overview-ai summary{cursor:pointer;color:#e4c481}
+.ty-terminal.ty-terminal-overview .ty-overview-source summary,.ty-terminal.ty-terminal-overview .ty-overview-ai summary{cursor:pointer;color:var(--color-accent-600)}
 .ty-terminal.ty-terminal-overview .ty-overview-source p{font-size:13px;line-height:1.6;margin:8px 0}
-.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-warning{color:#e4c481;font-size:13px;margin:0;padding:8px 12px;border-top:1px solid #29414e}
+.ty-terminal.ty-terminal-overview .ty-overview-unified .ty-overview-warning{color:var(--board-warning);font-size:13px;margin:0;padding:8px 12px;border-top:1px solid var(--board-warning)}
 .ty-terminal.ty-terminal-overview .ty-overview-tabs{display:flex;gap:4px}
-.ty-terminal.ty-terminal-overview .ty-overview-tabs button{padding:6px 18px;min-height:32px;background:transparent;border:1px solid #29414e;border-radius:3px;color:#e7eef4;font:inherit;cursor:pointer}
-.ty-terminal.ty-terminal-overview .ty-overview-tabs button[aria-pressed=true]{background:#e4c48115;border-color:#927e4b;color:#f5d99a}
+.ty-terminal.ty-terminal-overview .ty-overview-tabs button{padding:6px 18px;min-height:32px;background:transparent;border:1px solid var(--color-border-primary);border-radius:3px;color:var(--color-text-primary);font:inherit;cursor:pointer}
+.ty-terminal.ty-terminal-overview .ty-overview-tabs button[aria-pressed=true]{background:color-mix(in srgb, var(--color-accent-50) 8%, transparent);border-color:var(--color-accent-200);color:var(--color-accent-600)}
 .ty-terminal.ty-terminal-overview .ty-overview-funds-body{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(320px,1fr);min-width:0}
 .ty-terminal.ty-terminal-overview .ty-overview-funds-plot{padding:8px 12px;min-width:0}
-.ty-terminal.ty-terminal-overview .ty-overview-funds-rank{border-left:1px solid #29414e;padding:0 12px;min-width:0}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank{border-left:1px solid var(--color-border-primary);padding:0 12px;min-width:0}
 .ty-terminal.ty-terminal-overview .ty-overview-funds-rank>.ty-table-scroll{max-height:252px;overflow:auto}
 .ty-terminal.ty-terminal-overview .ty-overview-funds-rank .ty-table{font-size:13px;width:100%}
-.ty-terminal.ty-terminal-overview .ty-overview-funds-rank th{position:sticky;top:0;background:#172631;z-index:1}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank th{position:sticky;top:0;background:var(--color-background-secondary-default);z-index:1}
 .ty-terminal.ty-terminal-overview .ty-overview-funds-rank td{height:34px}
-.ty-terminal.ty-terminal-overview .ty-overview-funds-rank input[type=checkbox]{accent-color:#e4c481;width:15px;height:15px;cursor:pointer}
+.ty-terminal.ty-terminal-overview .ty-overview-funds-rank input[type=checkbox]{accent-color:var(--color-accent-600);width:15px;height:15px;cursor:pointer}
 .ty-terminal.ty-terminal-overview .ty-overview-funds-rank .ty-text-button{white-space:normal;text-align:left}
 .ty-terminal.ty-terminal-overview .ty-overview-stock-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(250px,.75fr);gap:12px}
 .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-mini-ladder-body{display:block}
 .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-mini-ladder-footer{justify-content:flex-end}
-.ty-terminal.ty-terminal-overview .ty-overview-ai{border:1px solid #29414e;padding:12px;background:#111e27}
+.ty-terminal.ty-terminal-overview .ty-overview-ai{border:1px solid var(--color-border-primary);padding:12px;background:var(--color-background-primary-default)}
 .ty-terminal.ty-terminal-overview .ty-overview-ai>summary{font-size:14px}
-.ty-terminal.ty-terminal-overview .ty-overview-unified :is(button,input,summary):focus-visible{outline:2px solid #f5d99a;outline-offset:2px}
-.ty-terminal.ty-terminal-overview .ty-overview-unified :is(button,summary):hover{color:#f5d99a}
-.ty-terminal.ty-terminal-overview .ty-overview-unified input::placeholder{color:#aabcc9}
-.ty-terminal.ty-terminal-overview .ty-overview-unified input{caret-color:#f5d99a}
+.ty-terminal.ty-terminal-overview .ty-overview-unified :is(button,input,summary):focus-visible{outline:2px solid var(--color-accent-500);outline-offset:2px}
+.ty-terminal.ty-terminal-overview .ty-overview-unified :is(button,summary):hover{color:var(--color-accent-600)}
+.ty-terminal.ty-terminal-overview .ty-overview-unified input::placeholder{color:var(--color-text-secondary)}
+.ty-terminal.ty-terminal-overview .ty-overview-unified input{caret-color:var(--color-accent-600)}
 @media(max-width:1250px){
   .ty-terminal.ty-terminal-overview .ty-overview-market-row{grid-template-columns:minmax(0,1fr)}
   .ty-terminal.ty-terminal-overview .ty-overview-market-row .ty-breadth-panel>.ty-chart{min-height:0}
@@ -58,11 +58,11 @@
 }
 @media(max-width:700px){
   .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-chart-workspace,.ty-terminal.ty-terminal-overview .ty-overview-funds-body,.ty-terminal.ty-terminal-overview .ty-overview-stock-row{grid-template-columns:minmax(0,1fr)}
-  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-filter{border-right:0;border-bottom:1px solid #29414e;padding-right:0}
+  .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-filter{border-right:0;border-bottom:1px solid var(--color-border-primary);padding-right:0}
   .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-list{max-height:176px}
   .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-strength-row{min-height:44px}
   .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-funds-chart svg{height:220px;min-height:220px}
-  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank{border-left:0;border-top:1px solid #29414e}
+  .ty-terminal.ty-terminal-overview .ty-overview-funds-rank{border-left:0;border-top:1px solid var(--color-border-primary)}
   .ty-terminal.ty-terminal-overview .ty-overview-stock-row .ty-mini-ladder-body{grid-template-columns:minmax(0,1fr)}
   .ty-terminal.ty-terminal-overview .ty-overview-unified :is(.ty-overview-tabs button,.ty-strength-footer button,.ty-text-button){min-height:44px}
   .ty-terminal.ty-terminal-overview .ty-overview-unified .ty-fund-legend{max-height:100px}
@@ -153,7 +153,7 @@
   .ty-terminal.ty-terminal-overview .ty-sector-tracking .ty-stock-name{display:block;text-align:left}
   .ty-terminal.ty-terminal-overview .ty-sector-tracking .ty-stock-name small{display:none}
 }
-.ty-terminal.ty-terminal-overview .ty-tracking-sector{font-size:13px;font-weight:500;margin-right:auto;color:#f5d99a}
+.ty-terminal.ty-terminal-overview .ty-tracking-sector{font-size:13px;font-weight:500;margin-right:auto;color:var(--color-accent-600)}
 .ty-terminal.ty-terminal-overview .ty-sector-tracking-head>.ty-link{margin-left:auto}
 @media(max-width:1199px){.ty-terminal.ty-terminal-overview .ty-overview-flow-row{grid-template-columns:minmax(0,1fr)}}
 /* Core ladder analysis is open on arrival; detail lists scroll inside their area. */

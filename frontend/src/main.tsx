@@ -23,6 +23,7 @@ import { RecoveryHealthProvider } from './shared/RecoveryHealth';
 import './features/terminal/OverviewDensity.css';
 import './shared/terminal-theme.css';
 import './shared/workspace-density.css';
+import './shared/boardWorkspace.css';
 import { PageOutline } from './shared/PageOutline';
 
 function Login({ onLogin, expired, signingOut }: { onLogin: (s: SessionResponse) => void; expired: boolean; signingOut: boolean }) {

@@ -18,8 +18,8 @@
 .ty-terminal-auction .ty-auction-category{font-size:11px;font-weight:500;white-space:nowrap}
 .ty-terminal-auction .ty-auction-source { min-height: 32px; padding: 2px 4px; font-size: 10px; line-height: 14px; }
 .ty-terminal-auction .ty-auction-source details { position: relative; }
-.ty-terminal-auction .ty-auction-source summary { cursor: pointer; color: #aabcc9; }
-.ty-terminal-auction .ty-auction-source details[open] > div { position: absolute; z-index: 3; left: 0; top: 100%; width: 210px; padding: 6px; background: #172631; border: 1px solid var(--ty-line); }
+.ty-terminal-auction .ty-auction-source summary { cursor: pointer; color: var(--color-text-secondary); }
+.ty-terminal-auction .ty-auction-source details[open] > div { position: absolute; z-index: 3; left: 0; top: 100%; width: 210px; padding: 6px; background: var(--color-background-primary-default); border: 1px solid var(--ty-line); }
 .ty-terminal-auction .ty-auction-node-head { padding-top: 3px; padding-bottom: 3px; font-size: 10px; }
 .ty-terminal.ty-terminal-auction .ty-auction-stock-list { height: clamp(360px, calc(100dvh - 430px), 1000px); }
 .ty-terminal.ty-terminal-auction .ty-auction-stock-list li { box-sizing: border-box; min-height: 38px; padding: 3px var(--ty-auction-inset); gap: 3px; }
@@ -76,7 +76,7 @@
 .ty-terminal-auction .ty-auction-reference-body td { padding:0 4px; height:22px; line-height:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; font-weight:400; border-bottom:1px solid var(--ty-line); }
 .ty-terminal-auction .ty-auction-reference-body th { background:transparent; color:inherit; font-size:12px; }
 .ty-terminal-auction .ty-auction-reference-body th:first-child { padding-left:0; }
-.ty-terminal-auction .ty-auction-reference-body thead th { height:20px; line-height:20px; background:#172631; color:var(--ty-muted); font-size:11px; }
+.ty-terminal-auction .ty-auction-reference-body thead th { height:20px; line-height:20px; background:var(--color-background-secondary-default); color:var(--ty-muted); font-size:11px; }
 .ty-terminal-auction .ty-auction-reference-body td:nth-child(2),
 .ty-terminal-auction .ty-auction-reference-body th:nth-child(2),
 .ty-terminal-auction .ty-auction-reference-stocks td:nth-child(3),
@@ -94,7 +94,7 @@
 .ty-terminal-auction .ty-auction-reference-empty { padding:24px 0; color:var(--ty-muted); }
 @media(min-width:701px) {
   .ty-terminal-auction .ty-auction-rail { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; align-content:start; }
-  .ty-terminal-auction .ty-auction-detail-stack { grid-column:1; max-height:100%; overflow:auto; scrollbar-width:thin; scrollbar-color:#344d5c #0d1921; }
+  .ty-terminal-auction .ty-auction-detail-stack { grid-column:1; max-height:100%; overflow:auto; scrollbar-width:thin; scrollbar-color:var(--color-border-primary) var(--color-border-primary); }
   .ty-terminal-auction .ty-auction-rail .ty-panel-head { flex-wrap:wrap; align-items:center; align-content:center; min-height:58px; padding:4px 8px; gap:0 4px; }
   .ty-terminal-auction .ty-auction-rail .ty-panel-label { flex:1 0 100%; }
   .ty-terminal-auction .ty-auction-rail .ty-panel-action { margin-left:auto; line-height:22px; }

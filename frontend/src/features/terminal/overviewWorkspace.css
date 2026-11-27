@@ -4,7 +4,7 @@
 .ty-terminal-overview .ty-workspace-switch button{background:transparent;border:0;border-bottom:2px solid transparent;color:var(--ty-muted);padding:3px 12px;min-height:30px;font:inherit;font-size:13px;cursor:pointer;border-radius:0}
 .ty-terminal-overview .ty-workspace-switch button[aria-pressed=true]{color:var(--ty-gold);border-bottom-color:var(--ty-gold)}
 .ty-terminal-overview .ty-workspace-switch button:focus-visible{outline:2px solid var(--ty-gold);outline-offset:-2px}
-.ty-terminal-overview .ty-tracking-sector{min-width:0;max-width:160px;flex:1;height:24px;padding:0 4px;background:var(--ty-bg,#0c1922);border:1px solid var(--ty-line);color:var(--ty-gold)}
+.ty-terminal-overview .ty-tracking-sector{min-width:0;max-width:160px;flex:1;height:24px;padding:0 4px;background:var(--ty-bg,var(--color-background-secondary-default));border:1px solid var(--ty-line);color:var(--ty-gold)}
 .ty-terminal-overview .ty-workspace-pane{min-width:0;min-height:0}
 .ty-terminal.ty-terminal-overview .ty-overview-stock-row>.ty-overview-boards{display:none}
 @media(min-width:1200px) and (min-height:600px){
