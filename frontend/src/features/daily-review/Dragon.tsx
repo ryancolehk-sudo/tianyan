@@ -1,8 +1,10 @@
+import './dragonBoard.css';
+import type { ReactNode } from 'react';
 import { StockCandles } from './ReviewAnalysis';
-import { useEffect, useState } from 'react';
-import { api } from '../../shared/api';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { api, cancellableRead } from '../../shared/api';
 import { useNavigation } from '../../shared/navigation';
-import { Card, Table, Empty, Loading, Failure, RefButton, Money, Value, useBoundRead } from './components';
+import { Dialog, Card, Table, Empty, Loading, Failure, RefButton, Money, Value, useBoundRead } from './components';
 import { amount, number, text, tone } from './model';
 import type { Listing, Row, Side } from './model';
 import type { ReviewProps } from './context';
@@ -53,23 +55,199 @@ function ResearchExcerpt(p: ReviewProps & { record: Listing | null }) {
   </Card>;
 }
 
-export function Dragon(p: ReviewProps) {
-  const nav = useNavigation(); const query = new URLSearchParams(nav.search);
-  const [search, setSearch] = useState(''); const [scope, setScope] = useState('all'); const [netOrder, setNetOrder] = useState(false);
-  const params = new URLSearchParams({ trade_day: p.day, ...(p.asOf ? { as_of_time: p.asOf } : {}) });
-  const read = useBoundRead(`lhb:${params}`, () => api.reviewLhb(params));
-  const records = read.data?.data.records ?? [];
-  const key = query.get('record_key');
-  const record = key ? records.find(r => r.record_key === key) ?? null : (p.stock ? records.find(r => r.ts_code === p.stock) : records[0]) ?? null;
-  useEffect(() => { if (record && !key) p.select({ stock: record.ts_code, record_key: record.record_key }, true); }, [record?.record_key, key]);
-  const memberCodes = new Set(p.selectedTheme?.member_records.map(row => String(row.con_code)) ?? []);
-  const filtered = records.filter(r => (!p.mine || p.watched.has(r.ts_code)) && (scope !== 'mine' || p.watched.has(r.ts_code)) && (scope !== 'sector' || memberCodes.has(r.ts_code)) && `${r.ts_code} ${text(r.source_rows[0]?.name)} ${r.reason}`.toLowerCase().includes(search.toLowerCase()));
-  if (netOrder) filtered.sort((a, b) => (number(b.headline.net_amount) ?? -Infinity) - (number(a.headline.net_amount) ?? -Infinity));
-  const seat = query.get('seat') ?? '';
-  return <><div className="dr-lhb-top"><Card title="上榜对象" action={<small>{records.length}组沪深披露</small>}><div className="dr-table-tools"><input aria-label="搜索上榜对象" value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索股票 / 原披露原因"/><select aria-label="龙虎榜筛选范围" value={scope} onChange={e => setScope(e.target.value)}><option value="all">全部披露</option><option value="mine">我的关注</option><option value="sector">所选题材已返回成员</option></select><button aria-pressed={netOrder} onClick={() => setNetOrder(!netOrder)}>{netOrder ? '按净额' : '原披露顺序'}</button></div>
-    {read.busy ? <Loading/> : read.error ? <Failure error={read.error} retry={read.reload}/> : <Table label="龙虎榜上榜对象" className="dr-lhb-list"><thead><tr><th>#</th><th>个股</th><th>原因 / 区间</th><th>原榜净额</th><th>状态</th></tr></thead><tbody>{filtered.map((r, i) => <tr key={r.record_key} className={record?.record_key === r.record_key ? 'chosen' : ''}><td>{i + 1}</td><td><button className="dr-text-button" onClick={() => p.select({ stock: r.ts_code, record_key: r.record_key, seat: null })}>{text(r.source_rows[0]?.name)}<small>{r.ts_code}</small></button></td><td className="dr-wrap-cell" title={r.reason}>{r.reason}</td><td><Money value={r.headline.net_amount}/></td><td>{r.headline_state === 'available' ? '已载入' : '归属待核'}</td></tr>)}</tbody></Table>}
-    {scope === 'sector' && p.selectedTheme?.truncated && <p className="dr-warning">原日成员详情已截断，此处仅筛选已返回成员，不能代表题材全部披露。</p>}{!read.busy && !filtered.length && <Empty>{scope === 'sector' && !p.selectedTheme?.detail_available ? '所选原日题材成员未取得，不能确认关联范围。' : scope === 'sector' && p.selectedTheme?.truncated ? '已返回成员中未匹配到披露；完整题材范围尚不可判断。' : '当前筛选下没有已披露记录。'}</Empty>}<div className="dr-link-line"><span>关注关联：{p.notebook.content.core_stocks.find(c => c.code === record?.ts_code)?.role ?? '尚未设置研究角色'}</span><button onClick={() => p.go('direction')}>返回板块轮动 →</button></div><p className="dr-note">按具体披露原因分别查看，不合并单日与多日金额。</p></Card>
-    <Card title={`席位明细${record ? ' · ' + text(record.source_rows[0]?.name) : ''}`} action={<RefButton row={record?.source_rows[0]} onOpen={p.openRef} label="核对榜单原始披露"/>}>
-      {record ? <><p className="dr-listing-reason">上榜原因：{record.reason}</p>{record.headline_state !== 'available' && <p className="dr-warning">同代码、同原因有多条来源记录，无法确认唯一披露区间。原行均保留，净额和席位合计不拼加。</p>}<div className="dr-three-values dr-lhb-totals"><section><small>买入侧前五合计</small><b className="rise">{amount(record.buy_top5.amount_yuan)}</b></section><section><small>卖出侧前五合计</small><b className="fall">{amount(record.sell_top5.amount_yuan)}</b></section><section><small>原榜净额</small><b className={tone(record.headline.net_amount)}>{amount(record.headline.net_amount)}</b></section></div><div className="dr-seats-grid"><Card title="买入侧前五"><SeatTable side={record.buy_top5} type="buy" select={p.select} openRef={p.openRef} selected={seat}/></Card><Card title="卖出侧前五"><SeatTable side={record.sell_top5} type="sell" select={p.select} openRef={p.openRef} selected={seat}/></Card></div><p className="dr-note">点击席位查看近期同名披露。原榜净额直接引用统计单，不用两侧前五之差替代；机构同名行各自保留。</p></> : <Empty>{key ? '该具体披露未在所选日期返回，请从左侧重新选择。' : p.stock ? '所选股票当日没有可访问的龙虎榜披露。' : '请选择一条上榜记录。'}</Empty>}
-    </Card></div><StockCandles day={p.day} asOf={p.asOf} stock={record?.ts_code ?? p.stock} select={p.select}/><div className="dr-lhb-bottom"><StockHistory {...p} code={record?.ts_code ?? p.stock}/><SeatHistory {...p} seat={seat}/><ResearchExcerpt {...p} record={record}/></div></>;
+
+type Category = '机构专用' | '营业部' | '股通' | '其他';
+type Activity = { record: Listing; values: unknown[] };
+type Participant = { name: string; category: Category; codes: Set<string>; buy: Activity[]; sell: Activity[] };
+
+function participantIndex(records: Listing[], search: string, labels: ReadonlyMap<string,string>) {
+  const groups = new Map<string, Participant>();
+  for (const record of records) {
+    const stockMatches = [record.ts_code, record.source_rows[0]?.name, record.reason].join(' ').toLowerCase().includes(search);
+    for (const side of ['buy', 'sell'] as const) {
+      const disclosure = side === 'buy' ? record.buy_top5 : record.sell_top5;
+      if (disclosure.state === 'ambiguous_disclosure') continue;
+      const values = new Map<string, unknown[]>();
+      for (const row of disclosure.records) {
+        const name = String(row.exalter ?? '').trim();
+        if (!name || (!stockMatches && ![name,labels.get(name)].join(' ').toLowerCase().includes(search))) continue;
+        const amounts = values.get(name) ?? [];
+        amounts.push(row[side]);
+        values.set(name, amounts);
+      }
+      for (const [name, amounts] of values) {
+        const kind = name === '机构专用' ? '机构专用' : /[沪深]股通/.test(name) ? '股通' : name.includes('营业部') ? '营业部' : '其他';
+        const group: Participant = groups.get(name) ?? { name, category: kind, codes: new Set<string>(), buy: [], sell: [] };
+        group.codes.add(record.ts_code);
+        group[side].push({ record, values: amounts });
+        groups.set(name, group);
+      }
+    }
+  }
+  return [...groups.values()].sort((a,b) => b.codes.size - a.codes.size || largestRow(b) - largestRow(a) || a.name.localeCompare(b.name, 'zh'));
+}
+
+function seatLabel(name: string) {
+  const branch = name.match(/^(.+?证券)(?:股份有限公司|有限责任公司|有限公司)?(.+?)(?:证券)?营业部$/);
+  return branch ? { title: branch[2], broker: branch[1] } : { title: name, broker: '' };
+}
+
+function rowAmount(value:unknown) {
+  const n = number(value);
+  if (n === null) return '—';
+  if (Math.abs(n)>=1e8) return amount(n);
+  return Math.abs(n)>=10000 ? (n/10000).toLocaleString('zh-CN',{maximumFractionDigits:1})+'万' : n.toLocaleString('zh-CN')+'元';
+}
+
+function Disclosure(p:ReviewProps & {record:Listing; notebookBar:ReactNode; close:()=>void}) {
+  const {record} = p;
+  const seat = new URLSearchParams(location.search).get('seat') ?? '';
+  const [tab,setTab] = useState(seat ? '席位历史' : '席位明细');
+  const selectSeat:ReviewProps['select'] = values => { p.select(values); setTab('席位历史'); };
+  return <Dialog title={text(record.source_rows[0]?.name)+' · '+record.ts_code} close={p.close}><div className="lh-detail">
+    <nav className="lh-tabs" aria-label="披露详情">{['席位明细','个股历史','席位历史','研究摘记'].map(t=><button key={t} aria-pressed={t===tab} onClick={()=>setTab(t)}>{t}</button>)}</nav>
+    {tab==='个股历史' ? <><StockHistory {...p} code={record.ts_code}/><StockCandles day={p.day} asOf={p.asOf} stock={record.ts_code} select={p.select}/></> : tab==='席位历史' ? <SeatHistory {...p} seat={seat}/> : tab==='研究摘记' ? <>{p.notebookBar}<ResearchExcerpt {...p} record={record}/></> : <>
+    <RefButton row={record.source_rows[0]} onOpen={p.openRef} label="核对榜单原始披露"/>
+<p className="dr-listing-reason">上榜原因：{record.reason}</p>{record.headline_state !== 'available' && <p className="dr-warning">同代码、同原因有多条来源记录，无法确认唯一披露区间。原行均保留，净额和席位合计不拼加。</p>}<div className="dr-three-values dr-lhb-totals"><section><small>买入侧前五合计</small><b className="rise">{amount(record.buy_top5.amount_yuan)}</b></section><section><small>卖出侧前五合计</small><b className="fall">{amount(record.sell_top5.amount_yuan)}</b></section><section><small>原榜净额</small><b className={tone(record.headline.net_amount)}>{amount(record.headline.net_amount)}</b></section></div><div className="dr-seats-grid"><Card title="买入侧前五"><SeatTable side={record.buy_top5} type="buy" select={selectSeat} openRef={p.openRef} selected={seat}/></Card><Card title="卖出侧前五"><SeatTable side={record.sell_top5} type="sell" select={selectSeat} openRef={p.openRef} selected={seat}/></Card></div><p className="dr-note">点击席位查看近期同名披露。原榜净额直接引用统计单，不用两侧前五之差替代；机构同名行各自保留。</p>
+    </>}</div></Dialog>;
+}
+
+function largestRow(actor:Participant) {
+  return Math.max(0,...[...actor.buy,...actor.sell].flatMap(activity=>activity.values.map(value=>number(value) ?? 0)));
+}
+
+function periodLabel(reason:string) {
+  if (/三[个日天]|3[个日天]/.test(reason) && /连续|累计/.test(reason)) return '3日';
+  if (/连续|累计|期间/.test(reason)) return '区间';
+  return '';
+}
+
+function ActivityChips({items,open}:{items:Activity[];open:(r:Listing)=>void}) {
+  return <>{items.length ? items.map(({record,values})=><button key={record.record_key} className="lh-chip" title={record.ts_code+' · '+record.reason+' · '+values.map(rowAmount).join(' / ')} onClick={()=>open(record)}>
+    <b>{text(record.source_rows[0]?.name)}</b><span>{values.map(rowAmount).join(' / ')}</span>{periodLabel(record.reason) && <i>{periodLabel(record.reason)}</i>}
+  </button>) : <small>—</small>}</>;
+}
+
+// A seat on both lists can carry the same provider net twice. Accept one net
+// only when each list contains at most one matching row and the disclosures agree.
+function netActivities(actor:Participant) {
+  const events=new Set([...actor.buy,...actor.sell].map(a=>a.record));
+  const buy:Activity[]=[], sell:Activity[]=[];
+  let unknown=0;
+  for(const record of events) {
+    const rows=[record.buy_top5,record.sell_top5].map(side=>side.records.filter(row=>row.exalter===actor.name));
+    const values=rows.flat().map(row=>number(row.net_buy));
+    const net=values[0];
+    if((actor.category==='机构专用'&&values.length>1)||rows.some(side=>side.length>1)||net==null||values.some(value=>value!==net)) {unknown++;continue;}
+    if(net!==0) (net>0?buy:sell).push({record,values:[Math.abs(net)]});
+  }
+  return {buy,sell,unknown};
+}
+
+function InstitutionBoard({records,open}:{records:Listing[];open:(r:Listing)=>void}) {
+  const [side,setSide]=useState<'buy'|'sell'>('buy');
+  const rows=records.flatMap(record=>{
+    if (record.headline_state!=='available') return [];
+    const buy=record.buy_top5.records.filter(row=>row.exalter==='机构专用');
+    const sell=record.sell_top5.records.filter(row=>row.exalter==='机构专用');
+    const ranked=side==='buy'?buy:sell;
+    if (!ranked.length) return [];
+    const values=ranked.map(row=>number(row[side]));
+    const total=values.every((n):n is number=>n!==null) ? values.reduce((a,b)=>a+b,0) : null;
+    const count=(n:number,state:string)=>n || (state==='complete'?'0':'—');
+    return [{record,buy:count(buy.length,record.buy_top5.state),sell:count(sell.length,record.sell_top5.state),total}];
+  }).sort((a,b)=>(b.total??-1)-(a.total??-1));
+  return <section className="lh-ranking" aria-label="机构动向"><div className="lh-panel-heading"><h3>机构动向</h3><div className="lh-tabs">{(['buy','sell'] as const).map(s=><button aria-pressed={s===side} key={s} onClick={()=>setSide(s)}>{s==='buy'?'买入额':'卖出额'}</button>)}</div></div>
+    <div className="lh-scroll"><table><thead><tr><th>个股</th><th>买 / 卖席次</th><th>已披露金额</th></tr></thead><tbody>{rows.map(({record,buy,sell,total})=><tr key={record.record_key}><td><button className="lh-link" title={record.reason} onClick={()=>open(record)}>{text(record.source_rows[0]?.name)} {periodLabel(record.reason)}</button></td><td>{buy} / {sell}</td><td className={side==='buy'?'rise':'fall'}>{rowAmount(total)}</td></tr>)}</tbody></table>{!rows.length&&<Empty>未见该侧机构专用席位。</Empty>}</div></section>;
+}
+
+const modes=['重点席位','参考游资','活跃营业部','股通','全部席位','上榜个股'] as const;
+type Mode=typeof modes[number];
+
+export function Dragon(p:ReviewProps & {notebookBar:ReactNode}) {
+  const query = new URLSearchParams(useNavigation().search);
+  const [search,setSearch]=useState('');
+  const [scope,setScope]=useState('all');
+  const [mode,setMode]=useState<Mode>('重点席位');
+  const [basis,setBasis]=useState<'net'|'gross'>('net');
+  const [direction,setDirection]=useState('两侧');
+  const [netOrder,setNetOrder]=useState(false);
+  const [mobilePanel,setMobilePanel]=useState('席位');
+  const frame=useRef<HTMLDivElement>(null);
+  const params=new URLSearchParams({trade_day:p.day,...(p.asOf?{as_of_time:p.asOf}:{})});
+  const read=useBoundRead('lhb:'+params,()=>api.reviewLhb(params));
+  const records=read.data?.data.records??[];
+  const listingCount=read.data?.data.source_listing_count;
+  const key=query.get('record_key');
+  const record=key?records.find(r=>r.record_key===key):records.find(r=>r.ts_code===p.stock);
+  const members=new Set(p.selectedTheme?.member_records.map(r=>String(r.con_code))??[]);
+  const scoped=records.filter(r=>(!p.mine && scope!=='mine'||p.watched.has(r.ts_code)) && (scope!=='sector'||members.has(r.ts_code)));
+  const term=search.trim().toLowerCase();
+  const lookupCodes=[...new Set(records.map(r=>r.ts_code.split('.')[0]))].sort().slice(0,32).join(',');
+  const checkDay=!p.asOf && lookupCodes ? p.day : '';
+  type Observation={source:string; day:string; code:string; seat:string; label:string; url:string};
+  const check=useBoundRead('lhb-labels:'+checkDay+':'+lookupCodes,()=>checkDay
+    ? cancellableRead<{data:{day:string;rows:Observation[];kpl_status:string}}>('/api/v1/review-data/seat-labels?'+new URLSearchParams({trade_day:checkDay,codes:lookupCodes}),new AbortController().signal)
+    : Promise.resolve(null));
+  const result=check.data?.data;
+  const observations=result?.day===checkDay && Array.isArray(result.rows) ? result.rows.filter(row=>row.day===checkDay) : [];
+  const labels=new Map(observations.map(row=>[row.seat,row.label]));
+  const actors=participantIndex(scoped,term,labels);
+  const named=actors.filter(a=>labels.has(a.name));
+  const branches=actors.filter(a=>a.category==='营业部');
+  function attribution(a:Participant) {
+    const codes=new Set([...a.codes].map(code=>code.split('.')[0]));
+    const matching=observations.filter(row=>row.seat===a.name && codes.has(row.code));
+    const distinct=new Map(matching.map(row=>[row.source+'|'+row.label,row]));
+    return [...distinct.values()].map(row=><small key={row.source+row.label}>
+      <a href={row.url} target="_blank" rel="noopener noreferrer">{row.source} · {row.label} ↗</a>
+    </small>);
+  }
+  const hotspots=[...named,...branches.filter(a=>!labels.has(a.name)).slice(0,8)];
+  const selected=term && mode==='重点席位'?actors:mode==='重点席位'?hotspots:mode==='参考游资'?named:mode==='股通'?actors.filter(a=>a.category==='股通'):mode==='活跃营业部'?branches:actors;
+  const hasNet=scoped.some(r=>[...r.buy_top5.records,...r.sell_top5.records].some(row=>number(row.net_buy)!==null));
+  const net=hasNet && basis==='net';
+  const groups=selected.map(a=>({...a,unknown:0,...(net?netActivities(a):{})}));
+  const visible=groups.filter(a=>direction==='两侧'||(direction==='买榜'?a.buy:a.sell).length);
+  function cell(a:typeof groups[number],side:'buy'|'sell') {
+    return <td className={'lh-'+side}><div className="lh-chip-list"><ActivityChips items={a[side]} open={open}/></div></td>;
+  }
+  const stocks=scoped.filter(r=>[r.ts_code,r.source_rows[0]?.name,r.reason].join(' ').toLowerCase().includes(term));
+  const matchingEvents=new Set([...stocks,...actors.flatMap(a=>[...a.buy,...a.sell].map(item=>item.record))]);
+  const institutionRecords=term?scoped.filter(r=>matchingEvents.has(r)):scoped;
+  if(netOrder) stocks.sort((a,b)=>(number(b.headline.net_amount)??-Infinity)-(number(a.headline.net_amount)??-Infinity));
+  function open(r:Listing) {p.select({stock:r.ts_code,record_key:r.record_key,seat:null});}
+  const close=()=>p.select({stock:null,record_key:null,seat:null},true);
+  const empty=scope==='sector' && p.selectedTheme?.truncated?'已返回成员中未匹配到披露；完整题材范围尚不可判断。':scope==='sector'&&!p.selectedTheme?.detail_available?'所选原日题材成员未取得，不能确认关联范围。':'当前筛选下没有已披露记录。';
+  useLayoutEffect(()=>{
+    const box=frame.current;
+    if(!box)return;
+    const resize=()=>box.style.setProperty('--lh-height',Math.max(150,window.innerHeight-box.getBoundingClientRect().top-52)+'px');
+    const observer=new ResizeObserver(resize);
+    observer.observe(box.closest('.dr-root')??box);
+    window.addEventListener('resize',resize);
+    resize();
+    return ()=>{observer.disconnect();window.removeEventListener('resize',resize);};
+  },[read.busy,read.error]);
+  return <section className="lh-board" aria-label="龙虎榜资金动向">
+    <header className="lh-head"><div><h2>龙虎榜</h2><small>{p.day} 披露</small></div><b>{records.length ? new Set(scoped.map(r=>r.ts_code)).size+' 只上榜股票' : listingCount===0 ? '来源返回 0 条披露' : read.busy ? '正在读取披露清单…' : '披露数量待核'}</b></header>
+    <div className="lh-tools"><nav className="lh-tabs" aria-label="龙虎榜视角">{modes.map(m=><button key={m} aria-pressed={m===mode} onClick={()=>{setMode(m);setMobilePanel('席位');}}>{m}</button>)}</nav>
+      <input aria-label="搜索上榜对象" placeholder={mode==='上榜个股'?'股票 / 代码 / 原因':'游资标签 / 营业部 / 股票'} value={search} onChange={e=>setSearch(e.target.value)}/>
+      <select aria-label="龙虎榜筛选范围" value={scope} onChange={e=>setScope(e.target.value)}><option value="all">全部披露</option><option value="mine">我的关注</option><option value="sector">所选题材已返回成员</option></select></div>
+    {scope==='sector'&&p.selectedTheme?.truncated&&<p className="dr-warning">原日成员详情已截断，此处仅筛选已返回成员，不能代表题材全部披露。</p>}
+    {!read.data&&read.busy?<Loading/>:!read.data&&read.error?<Failure error={read.error} retry={read.reload}/>:!records.length?<Empty>{listingCount===0 ? p.day+' 的来源上榜清单返回 0 条。' : '该日尚无可核对的上榜清单。'}{read.data?.data.unmatched_seat_records?.length ? ' 另有 '+read.data.data.unmatched_seat_records.length+' 条席位记录尚未匹配到上榜披露。' : ''}</Empty>:<>
+    <div className="lh-mobile lh-tabs">{['席位','机构'].map(v=><button key={v} aria-pressed={mobilePanel===v} onClick={()=>setMobilePanel(v)}>{v}</button>)}</div>
+    <div ref={frame} className={'lh-frame '+(mobilePanel==='机构'?'show-institutions':'')}>
+      <section className="lh-matrix"><div className="lh-panel-heading"><h3>{mode==='上榜个股'?'个股榜单':'席位买卖对照'} <small>{mode==='上榜个股'?stocks.length+' 组披露':visible.length+' 个席位'}</small></h3>
+      {mode==='上榜个股'?<button aria-pressed={netOrder} onClick={()=>setNetOrder(!netOrder)}>{netOrder?'按原榜净额':'原披露顺序'}</button>:<div className="lh-tabs">{hasNet&&<><button aria-pressed={net} onClick={()=>setBasis('net')}>净额</button><button aria-pressed={!net} onClick={()=>setBasis('gross')}>买卖榜</button></>}<select aria-label="买卖方向" value={direction} onChange={e=>setDirection(e.target.value)}>{['两侧','买榜','卖榜'].map(s=><option key={s} value={s}>{net?({'买榜':'净买入','卖榜':'净卖出'}[s]??s):s}</option>)}</select></div>}</div>
+      <div className="lh-scroll" key={mode+scope+term+direction}>
+      {mode==='上榜个股'?<><table><thead><tr><th>股票</th><th>上榜原因</th><th>原榜净额</th></tr></thead><tbody>{stocks.map(r=><tr key={r.record_key}><td><button className="lh-link" onClick={()=>open(r)}>{text(r.source_rows[0]?.name)} <small>{r.ts_code}</small></button></td><td>{r.reason}</td><td><Money value={r.headline.net_amount}/></td></tr>)}</tbody></table>{!stocks.length&&<Empty>{empty}</Empty>}</>:
+      <><table className="lh-actors"><thead><tr><th>游资 / 席位</th><th>披露营业部</th>{direction!=='卖榜'&&<th className="rise">{net?'净买入个股 · 净额':'买榜个股 · 买入额'}</th>}{direction!=='买榜'&&<th className="fall">{net?'净卖出个股 · 净额':'卖榜个股 · 卖出额'}</th>}</tr></thead>
+      <tbody>{visible.map(a=>{const label=seatLabel(a.name);return <tr key={a.name}><th scope="row"><b>{label.title}</b>{attribution(a)}<small>{a.codes.size} 只个股{a.unknown>0?' · '+a.unknown+'组净额待核':''}</small></th><td title={a.name}>{a.name}</td>{direction!=='卖榜'&&cell(a,'buy')}{direction!=='买榜'&&cell(a,'sell')}</tr>;})}</tbody></table>{!visible.length&&<Empty>{empty}{mode==='参考游资'?' 参考表中没有匹配的当期席位。':''}</Empty>}</>}
+      </div></section>
+      <InstitutionBoard records={institutionRecords} open={open}/>
+    </div></>}
+    <footer>{mode==='重点席位'&&!term?'重点收录匹配参考表的席位及其余涉及股票最多的八家营业部。':''}金额按原披露营业部统计。标签按交易日、股票和营业部全名交叉核对。{checkDay&&check.data?.data?.kpl_status!=='0'?'开盘啦待核，第三方旁证单列。':''}{net?'净额取同一席位同一披露的原行，重复上榜只列一次。':'金额按买卖榜及上榜原因分列。'}</footer>
+    {!read.busy&&!read.error&&(key||p.stock)&&(record?<Disclosure key={record.record_key} {...p} record={record} close={close}/>:<Dialog title="上榜披露" close={close}><Empty>所选股票或记录未在该日披露中返回。</Empty></Dialog>)}
+  </section>;
 }

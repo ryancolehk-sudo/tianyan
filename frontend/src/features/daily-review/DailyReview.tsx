@@ -38,7 +38,8 @@ function ReviewWorkspace({ session }: { session: SessionResponse }) {
   const { market } = useMarketSession();
   const [postcloseDay,setPostcloseDay]=useState('');
   const [postcloseCoverage,setPostcloseCoverage]=useState<Coverage[]>([]);
-  const isOverview=['overview','new-highs'].includes(reviewView(nav.search));
+  const isNewHighs = reviewView(nav.search) === 'new-highs';
+  const isOverview = isNewHighs || reviewView(nav.search) === 'overview';
   const explicit = q.get('trade_day') ?? '';
   const asOf = q.get('as_of_time') ?? '';
   const lookback = reviewLookback(q, preferences);
@@ -88,11 +89,11 @@ function ReviewWorkspace({ session }: { session: SessionResponse }) {
   function select(values: Record<string, string | null>, replace = false) { const url = new URL(location.href); for (const [k, v] of Object.entries(values)) { if (v === null || v === '') url.searchParams.delete(k); else url.searchParams.set(k, v); } updateLocation(url, { replace }); }
   function changeDay(value: string) { if (!value) return; const outside = !history.data?.data.trade_days.includes(value); select({ trade_day: value, record_key: null, edit: null, ...(outside ? { range_end: value } : {}) }); }
   async function collect() {
-    if (collectingRef.current || currentDailyNotClosed) return;
+    if (session.data.user.role !== 'admin' || asOf || collectingRef.current || currentDailyNotClosed) return;
     collectingRef.current = true; setCollecting(true); setCollectError(null); setProgress('正在安排资料采集…');
     try { const direction = reviewView(nav.search) === 'direction'; const result = direction
       ? await write<{ data: { batch_id: string } }>('/api/v1/direction-data/collections', { source_scope: 'four_sources', ...(day ? { trade_day: day } : {}), ...(directionWindow?.day === day ? { end_day: directionWindow.endDay, lookback: directionWindow.lookback ?? 5, source_scope: 'four_sources' } : {}) }, session.data.csrf_token, crypto.randomUUID())
-      : reviewView(nav.search)==='new-highs'?await write<{data:{batch_id:string}}>('/api/v1/review-data/new-highs/collections',{...(explicit?{trade_day:explicit}:{})},session.data.csrf_token,crypto.randomUUID())
+      : reviewView(nav.search)==='new-highs'?await write<{data:{batch_id:string}}>('/api/v1/review-data/new-highs/collections',{...(day?{trade_day:day}:{})},session.data.csrf_token,crypto.randomUUID())
       : await api.collectReview({ lookback: 60, member_lookback: 5, include_members: true, include_news: false, source_scope: 'four_sources', ...(explicit ? { trade_day: explicit } : {}) }, session.data.csrf_token, crypto.randomUUID()); setBatch({ id: result.data.batch_id, direction }); }
     catch (e) { setCollectError(e instanceof Error ? e : new Error('采集安排失败。')); setCollecting(false); collectingRef.current = false; }
   }
@@ -124,12 +125,13 @@ function ReviewWorkspace({ session }: { session: SessionResponse }) {
     <Failure error={read.error} retry={read.reload}/><Failure error={history.error} retry={history.reload}/>
     {waitingForCurrent && <p className="dr-note" role="status">正在更新 {market?.trade_day} 的今日位置，当前仍显示 {day} 已保存资料。</p>}
     {currentDayPending && <div className="dr-observation" role="status"><b>今日已预留 · 等待资料更新</b><span>昨日与历史记录保留在原日期；收到盘中样本或收盘资料后填入今天同一行，缺失不补零。</span></div>}
-    {read.busy && !data ? <Loading text="正在读取同日行情、题材和证据…"/> : !data || !day ? <Empty>尚无可核实的交易日资料，可由管理员补齐资料。</Empty> : <>
+    {read.busy && !data ? (!isNewHighs && <Loading text="正在读取同日行情、题材和证据…"/>) : !data || !day ? (!isNewHighs && <Empty>尚无可核实的交易日资料，可由管理员补齐资料。</Empty>) : <>
       <div className="dr-market-ribbon">{data.indices.map(index => <span key={index.ts_code} title={index.record?.source_time ? `指数资料时点 ${String(index.record.source_time)}` : undefined}>{index.name}<b>{text(index.record?.close)}</b><strong className={tone(index.record?.pct_chg)}>{pct(index.record?.pct_chg)}</strong>{index.record?.price_basis === 'intraday_snapshot' && <small className="dr-snapshot-badge">已存 {snapshotTime({ state: 'partial', source_time: String(index.record.source_time ?? '') })}</small>}</span>)}<span>沪深成交 <b className="gold">{turnover(data.metrics.turnover?.amount_yuan)}</b></span><small>资料日 {day} · {isIntradaySnapshot(data.metrics) ? `已存盘中样本 ${snapshotTime(data.metrics)}` : currentDayPending ? '今日资料待更新' : data.calendar_state === 'complete' ? '原日样本' : '日历未核'}</small></div>
       {isIntradaySnapshot(data.metrics) && <div className="dr-observation" role="status"><b>盘中已存样本 · 行情截至 {snapshotTime(data.metrics)} · 非收盘数据</b><span>{data.observation?.scope || data.metrics.scope || '完整日频资料尚未归档，先显示已保存的同日行情；封板、反馈和成交额均对应这个采样时点。'}</span></div>}
       {data.calendar_state !== 'complete' && <div className="dr-error">所选日期不是当前可核实的收盘交易日。保留你的选择，未自动切换到其他日期。</div>}
-      <ReviewRefresh.Provider value={refreshEpoch}><DailyBody key={`${day}:${asOf}`} session={session} day={day} asOf={asOf} data={data} series={history.data?.data ?? null} seriesBusy={history.busy} select={select} openRef={setReference} view={reviewView(nav.search)} onDirectionWindow={setDirectionWindow} onOverviewDay={setPostcloseDay} onOverviewCoverage={setPostcloseCoverage}/></ReviewRefresh.Provider>
+      {!isNewHighs && <ReviewRefresh.Provider value={refreshEpoch}><DailyBody key={`${day}:${asOf}`} session={session} day={day} asOf={asOf} data={data} series={history.data?.data ?? null} seriesBusy={history.busy} select={select} openRef={setReference} view={reviewView(nav.search)} onDirectionWindow={setDirectionWindow} onOverviewDay={setPostcloseDay} onOverviewCoverage={setPostcloseCoverage}/></ReviewRefresh.Provider>}
     </>}
+    {isNewHighs && <ReviewRefresh.Provider value={refreshEpoch}><NewHighs key={day+':'+asOf} day={day} asOf={asOf} select={select} automaticDay={!explicit} onResolvedDay={setPostcloseDay} onCoverage={setPostcloseCoverage} collecting={collecting} repair={session.data.user.role === 'admin' && !asOf && !currentDailyNotClosed ? collect : undefined}/></ReviewRefresh.Provider>}
     {coverage && <CoveragePanel entries={isOverview ? postcloseCoverage : data?.coverage ?? []} flags={data?.metrics.quality_flags} open={ref => { showCoverage(false); setReference(ref); }} close={() => showCoverage(false)}/>}
     {reference && <Evidence reference={reference} close={() => setReference(null)}/>}
   </div>;
@@ -203,13 +205,13 @@ function DailyBody({ session, day, asOf, data, series, seriesBusy, select, openR
   const notebookBar=<div className="dr-notebook-status"><span className={n.dirty ? 'gold' : ''}>{status}</span>{n.content.stage !== '未标记' && <span>情绪：<b className="gold">{n.content.stage}</b></span>}<span className="dr-ai">AI解读 · 预留</span><button disabled={!n.writable || n.busy || !n.dirty} onClick={() => n.save()}>{n.busy ? '正在保存…' : '保存草稿'}</button><button disabled={!!asOf} title={asOf ? '回到复盘资料查看笔记历史' : undefined} onClick={() => showHistory(true)}>历史版本</button><a href={`/research/reviews?workspace=archive&archive_date=${day}`}>旧复盘归档 ↗</a></div>;
   const bottomActions=<>    {confirmationReason && <p id="dr-confirmation-reason" className="dr-confirmation-reason" role="status">{confirmationReason}</p>}
     <div className="dr-bottom-actions"><small>行情原件只读 · 判断由本人填写 · 确认会新增版本</small><button disabled={!n.writable || n.busy || !n.dirty} onClick={() => n.save()}>保存草稿</button><button className="primary" disabled={!!confirmationReason} aria-describedby={confirmationReason ? "dr-confirmation-reason" : undefined} onClick={() => n.save(n.content, view === 'direction' ? 'directions' : 'summary')}>{n.content.confirmed_sections.includes(view === 'direction' ? 'directions' : 'summary') && !n.dirty ? '当前版本已人工确认' : view === 'direction' ? '确认板块研究' : '确认本页'}</button><a href={'/research/tomorrow?' + new URLSearchParams({ source_trade_day: day })}>明日预案 →</a></div></>;
-  return <>{judgmentHost&&view!=='lhb'&&createPortal(<button className="primary dr-judgment-entry" disabled={!n.writable||n.busy} title={!n.writable?session.data.user.role==='viewer'?'当前账号仅可查看':asOf?'当时已知回看为只读':n.loading?'人工笔记正在读取':'人工笔记暂不可写':undefined} onClick={()=>edit(view==='direction'?'direction':'market')}>{hasJudgment?'编辑判断':'填写判断'}</button>,judgmentHost)}{view!=='direction'&&view!=='overview'&&view!=='new-highs'&&notebookBar}
+  return <>{judgmentHost&&view!=='lhb'&&createPortal(<button className="primary dr-judgment-entry" disabled={!n.writable||n.busy} title={!n.writable?session.data.user.role==='viewer'?'当前账号仅可查看':asOf?'当时已知回看为只读':n.loading?'人工笔记正在读取':'人工笔记暂不可写':undefined} onClick={()=>edit(view==='direction'?'direction':'market')}>{hasJudgment?'编辑判断':'填写判断'}</button>,judgmentHost)}{view!=='direction'&&view!=='overview'&&view!=='new-highs'&&view!=='lhb'&&notebookBar}
     {n.notice && <p className="dr-success" role="status">{n.notice}</p>}{n.error && <div className="dr-error" role="alert">{n.error.message}<button disabled={n.busy} onClick={n.reloadLatest}>放弃暂存，载入服务器版本</button></div>}
     <Failure error={detail.error} retry={detail.reload}/><Failure error={stocks.error} retry={stocks.reload}/><Failure error={selectedRead.error} retry={selectedRead.reload}/><Failure error={watch.error} retry={watch.reload}/><Failure error={stageRead.error} retry={stageRead.reload}/>
     {view === 'emotion' ? <Emotion {...props}/> : view === 'direction' ? <>
       <DirectionBoard day={day} asOf={asOf} refreshEpoch={refreshEpoch} ownerId={session.data.user.id} isAdmin={session.data.user.role === 'admin'} inactive={researchOpen} onResearch={openResearch} onWindowChange={(endDay,lookback) => onDirectionWindow({ day, endDay, lookback })}/>
       {researchOpen&&<section className="sr-research-drawer" aria-label="研究记录与核心跟踪"><header><h2>研究记录与核心跟踪</h2><button ref={researchClose} onClick={()=>setResearchOpen(false)}>收起记录</button></header>{notebookBar}<GroupedLimitUps {...props}/><Direction {...props}/>{bottomActions}</section>}
-    </> : view === 'lhb' ? <Dragon {...props}/> : view==='new-highs'?<NewHighs day={day} asOf={asOf} select={select} automaticDay={!query.has('trade_day')} onResolvedDay={onOverviewDay} onCoverage={onOverviewCoverage}/>:<PostcloseOverview {...props} automaticDay={!query.has('trade_day')} onResolvedDay={onOverviewDay} onCoverage={onOverviewCoverage} researchHeader={notebookBar} researchFooter={bottomActions}/>}
+    </> : view === 'lhb' ? <Dragon {...props} notebookBar={notebookBar}/>:<PostcloseOverview {...props} automaticDay={!query.has('trade_day')} onResolvedDay={onOverviewDay} onCoverage={onOverviewCoverage} researchHeader={notebookBar} researchFooter={bottomActions}/>}
     {view!=='direction'&&view!=='overview'&&view!=='new-highs'&&bottomActions}
     {query.get('edit') && <NoteEditor section={query.get('edit')!} notebook={n} themes={data.themes.items} selectedStock={stock} selectedSector={sector} close={() => select({ edit: null })}/>}
     {history && <NoteHistory day={day} close={() => showHistory(false)} openRef={openRef}/>}

@@ -36,3 +36,17 @@
 .nh-results-head{flex-wrap:wrap}
 @media(max-width:600px){.nh-count-state{flex:1;min-width:120px}.nh-list-empty button{min-height:44px}}
 @media(max-width:1000px){.nh-group-wide .nh-group-tables{grid-template-columns:minmax(0,1fr)}.nh-group-wide .nh-table-scroll+.nh-table-scroll{border-left:0;border-top:1px solid var(--nh-line)}}
+
+.dr-highs-page .nh-history.pcv-chart {display:flex;flex-direction:column;width:100%;height:100%;min-height:0;background:white;border:0;padding:0;}
+.dr-highs-page .nh-history header,.dr-highs-page .nh-history h3 {display:flex;align-items:center;gap:8px;background:white;border:0;color:var(--nh-muted);font:inherit;margin:0;padding:0;}
+.dr-highs-page .nh-history header {justify-content:space-between;}
+.nh-history h3 span {background:#fff4f4;color:var(--nh-red);padding:2px 7px;border-radius:4px;}
+.nh-legend {display:flex;align-items:center;justify-content:center;gap:5px;margin:4px 0 10px;color:#444;font-size:.94em;}
+.nh-legend i {width:14px;border-top:2px solid #fa4144;position:relative;}
+.nh-legend i:after {content:'';position:absolute;left:4px;top:-4px;border-radius:100%;width:6px;height:6px;background:#fa4144;}
+.nh-legend b {width:14px;height:8px;background:#fbaaaa;border-radius:2px;}
+.nh-plot {flex:1;min-height:0;position:relative;}
+.nh-plot svg {display:block;position:absolute;inset:0;}
+.nh-plot text {font:inherit;fill:#526077;}
+.nh-plot output,.nh-no-history {position:absolute;top:5px;background:white;border:1px solid var(--nh-line);padding:5px 9px;border-radius:4px;}
+.nh-no-history {top:45%;left:35%;}

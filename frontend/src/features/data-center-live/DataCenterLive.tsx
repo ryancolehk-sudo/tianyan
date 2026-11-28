@@ -88,6 +88,7 @@ export function DataCenterLive({ session, legacyTools }: { session: SessionRespo
   const [editorVersion, setEditorVersion] = useState(0);
   const [dataEditing, setDataEditing] = useState<ConnectionView | null>(null);
   const [dataEditorVersion, setDataEditorVersion] = useState(0);
+  const [dataSourceId, setDataSourceId] = useState<string>();
   const [advancedDataOpen, setAdvancedDataOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -127,10 +128,10 @@ export function DataCenterLive({ session, legacyTools }: { session: SessionRespo
     return () => { window.clearTimeout(timer); document.removeEventListener('visibilitychange', visibility); };
   }, [active, refresh]);
   function changeView(value: string) { const url = new URL(location.href); url.searchParams.set('view', value); updateLocation(url); }
-  function configure(id: string | null, initialKind: 'market' | 'model' = 'model') {
+  function configure(id: string | null, initialKind: 'market' | 'model' = 'model', sourceId?: string) {
     const item = items.find(row => row.id === id) ?? null;
     if (item && item.kind !== 'model' || !item && initialKind === 'market') {
-      setDataEditing(item); setDataEditorVersion(version => version + 1); setAdvancedDataOpen(true); setError(null); setNotice('');
+      setDataEditing(item); setDataSourceId(sourceId); setDataEditorVersion(version => version + 1); setAdvancedDataOpen(true); setError(null); setNotice('');
       if (view !== 'connections' || toolsOpen) changeView('connections');
       window.setTimeout(() => dataEditorTop.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
       return;
@@ -188,13 +189,13 @@ export function DataCenterLive({ session, legacyTools }: { session: SessionRespo
     <div className="dc-tabs"><nav aria-label="数据管理页面">{[['connections', '数据来源'], ['ai', 'AI 设置'], ['monitor', '运行监控']].map(([value, label]) => <button key={value} type="button" className={view === value && !toolsOpen ? 'selected' : ''} aria-current={view === value && !toolsOpen ? 'page' : undefined} onClick={() => changeView(value)}>{label}</button>)}</nav><button type="button" className={'dc-tools-button' + (toolsOpen ? ' selected' : '')} onClick={() => changeView(toolsOpen ? 'connections' : 'sources')}>{toolsOpen ? '返回数据来源' : '更多数据工具'}<Icon name="chevron"/></button></div>
     {error !== null && <ErrorNotice error={error}/>}{notice && <div className="dc-feedback" role="status">{notice}</div>}
     {toolsOpen && <div className="dc-legacy-tools">{legacyTools}</div>}
-    {!toolsOpen && view === 'monitor' && <Monitor overview={overview.data?.data} connections={items} loading={overview.busy} error={overview.error} refresh={refresh} configure={configure} refreshVersion={refreshVersion}/>}
+    {!toolsOpen && view === 'monitor' && <Monitor admin={admin} account={session.data.user.id} csrf={session.data.csrf_token} overview={overview.data?.data} connections={items} loading={overview.busy} error={overview.error} refresh={refresh} configure={configure} refreshVersion={refreshVersion}/>}
     <div hidden={toolsOpen || view !== 'connections'}>
       <details className="dc-advanced"><summary>iFinD 官方金融研究 · 八个领域 · 手动查询</summary><IfindResearch connections={items} session={session} configure={id => configure(id, 'market')}/></details>
-      <DataSources session={session} index={index ?? null} refreshVersion={refreshVersion} refresh={refresh} configure={id => configure(id, 'market')} openAi={() => changeView('ai')} active={!toolsOpen && view === 'connections'}/>
+      <DataSources session={session} index={index ?? null} ai={ai} refreshVersion={refreshVersion} refresh={refresh} configure={(id, sourceId) => configure(id, 'market', sourceId)} active={!toolsOpen && view === 'connections'}/>
       <details className="dc-registered-data dc-advanced" open={advancedDataOpen} onToggle={event => setAdvancedDataOpen(event.currentTarget.open)}><summary>其他来源与高级采集配置<Icon name="chevron"/></summary><p className="dc-muted">保留已登记来源、采集范围和历史记录；新增供应商需使用后台已有适配器。</p>
         <div className="dc-services-grid">{items.filter(item => item.kind !== 'model').map(item => <ServiceCard key={item.id} item={item} settings={ai} admin={admin} busy={busy} configure={() => configure(item.id)} test={() => probe(item)} toggle={() => { void act(async () => { await dataCenterApi.save({ ...connectionInput(item), enabled: !item.enabled }, session.data.csrf_token, item.id); }, item.enabled ? '服务已停用。' : '服务已启用。'); }} remove={() => { void act(async () => { await dataCenterApi.remove(item.id, session.data.csrf_token); }, '服务已移除，历史记录保留。'); }} setDefault={() => undefined}/>)}</div>
-        <div ref={dataEditorTop}>{index && advancedDataOpen && <ConnectionEditor key={'data-' + dataEditorVersion} initial={dataEditing} initialKind="market" index={index} session={session} refresh={refresh} onSaved={refresh} cancel={() => configure(null, 'market')}/>}</div>
+        <div ref={dataEditorTop}>{index && advancedDataOpen && <ConnectionEditor key={'data-' + dataEditorVersion} initial={dataEditing} initialSourceId={dataSourceId} initialKind="market" index={index} session={session} refresh={refresh} onSaved={refresh} cancel={() => configure(null, 'market')}/>}</div>
       </details>
     </div>
     <div hidden={toolsOpen || view !== 'ai'} className="dc-ai-page">

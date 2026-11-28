@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { RuntimeSource, SourceAdapter, SourceConfiguration, SourceIndex, SessionResponse } from '../../generated/schema';
@@ -98,7 +99,21 @@ function SourceEditor({ adapter, current, session, done, cancel }: { adapter: So
   </form>;
 }
 
-export function SourceRuntime({ data, session, reload }: { data: SourceIndex; session: SessionResponse; reload: () => void }) {
+export function SourceRuntime({ data, session, reload, connectionAction, requestedSourceId = '', families }: {
+  data: SourceIndex; session: SessionResponse; reload: () => void; connectionAction?: (sourceId: string) => ReactNode; requestedSourceId?: string; families?: Set<string>;
+}) {
+  const [query, setQuery] = useState('');
+  const [chosen, setChosen] = useState('');
+  const search = query.trim().toLowerCase();
+  const available = data.available_adapters.filter(adapter => !families || families.has(adapter.family));
+  const adapters = [...available]
+    .sort((a, b) => Number(b.family.startsWith('tushare_')) - Number(a.family.startsWith('tushare_')))
+    .filter(adapter => (adapter.name + ' ' + adapter.family).toLowerCase().includes(search));
+  const requested = data.items.find(item => item.provider.id === requestedSourceId);
+  const unavailable = !!requestedSourceId && !available.some(adapter => adapter.family === requested?.family);
+  const needsSelection = !!families && available.length > 1 && !chosen && !requested && !search;
+  const selected = adapters.find(adapter => adapter.family === (chosen || requested?.family))
+    ?? (needsSelection ? undefined : adapters[0]);
   const [editing, setEditing] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const write = useSubmit(session.data.user.id, 'source:refresh');
@@ -114,19 +129,32 @@ export function SourceRuntime({ data, session, reload }: { data: SourceIndex; se
     const result = await write.submit({ source: row.provider.id }, key => api.refreshSource(row.provider.id, session.data.csrf_token, key));
     if (result) { setNotice('采集任务已排队。请刷新状态查看实际结果，排队不表示采集成功。'); reload(); }
   }
-  return <Card title="外部数据连接" className="source-runtime" action={<span className="badge muted">{data.collection_enabled ? '本机采集已开启' : '本机采集已关闭'}</span>}>
-    <p className="feature-note">以下接入能力已实现。配置、使用范围及最近结果分别展示；最近一次返回不代表持续在线或实时行情。全部时间为北京时间。</p>
-    <p className="feature-note">来源顺序：已购 Tushare 可用权益优先，现有免费源补缺。报价先核对行情日期与时效，同等条件下优先 Tushare；旧日线不会盖过新鲜盘中行情，跨来源字段不会拼接。</p>
-    <div className="dataset-provenance" aria-label="Tushare接入概况"><strong>Tushare 已购数据优先</strong><p>本批提供 {data.available_adapters.filter(row => row.family.startsWith('tushare_')).length} 条有界连接，已配置 {data.items.filter(row => row.family.startsWith('tushare_')).length} 条；完整返回 {data.items.filter(row => row.family.startsWith('tushare_') && row.collection_state === 'ready').length} 条。具体失败、空表与覆盖分别见下方。</p><p>2026-10-23 已实测批量行情、四指数和全市场限制价返回成功；实际启用和采集结果见下方，接口预检不代表已经部署。实时分钟、历史分钟与新闻仍需重新核验；MCP工具目录不代表全部权益。北交所日历未核，不代填日历。</p></div>
-    <p className="feature-note">“部分返回”表示覆盖尚不完整或部分记录未纳入。下方展示实际数量；不会把未支持或校验未过的记录补成零行情。</p>
+  if (unavailable) return <p role="status">找不到指定的采集接口，请核对来源是否仍已登记。</p>;
+  return <Card title="采集接口" className="source-runtime" action={<span className="badge muted">{data.collection_enabled ? '本机采集已开启' : '本机采集已关闭'}</span>}>
+    {!families && <details className="data-inline-detail source-policy"><summary>采集口径与来源优先级</summary>
+      <p>报价优先比较行情日期与时效，同等条件下优先已购 Tushare 权益。部分返回的记录以实际数量为准，时间均为北京时间。</p>
+      <p aria-label="Tushare接入概况">Tushare 已提供 {data.available_adapters.filter(row => row.family.startsWith('tushare_')).length} 条有界连接，已配置 {data.items.filter(row => row.family.startsWith('tushare_')).length} 条，完整返回 {data.items.filter(row => row.family.startsWith('tushare_') && row.collection_state === 'ready').length} 条。</p>
+    </details>}
     {notice && <p className="source-feedback" role="status">{notice}</p>}{write.error && <ErrorState error={write.error}/>}
-    <div className="source-runtime-grid">{[...data.available_adapters].sort((a,b) => Number(b.family.startsWith('tushare_'))-Number(a.family.startsWith('tushare_'))).map(adapter => {
-      const current = data.items.find(row => row.family === adapter.family);
+    {available.length > (families ? 1 : 0) && <div className="data-source-pick">
+      <label>查找采集来源<input type="search" value={query} placeholder="搜索名称或接口代码" onChange={event => setQuery(event.target.value)}/></label>
+      <label>采集来源<select aria-label="选择采集来源" value={selected?.family ?? ''} onChange={event => setChosen(event.target.value)}>
+        {needsSelection && <option value="">选择接口</option>}
+        {adapters.map(adapter => <option key={adapter.family} value={adapter.family}>{adapter.name}</option>)}
+      </select></label><span>{adapters.length} 项</span>
+    </div>}
+    {!selected && !needsSelection && <p className="feature-note" role="status">{query ? '没有匹配的来源，请更换关键词。' : '当前没有可配置的采集来源。'}</p>}
+    <div className="source-runtime-grid">{(selected ? [selected] : []).map(adapter => {
+      const current = requested?.family === adapter.family ? requested : data.items.find(row => row.family === adapter.family);
       const newsCoverage = current?.news_coverage as { markets?: Array<{ market: string; returned: number; total: number | null; status: string }>; partial?: boolean } | null | undefined;
       const last = current?.last_attempt;
+      const deniedBySupplier = current?.collection_state === 'unavailable' && current.paused_reason === 'permission_missing'
+        && last?.reason === 'permission_missing' && last.request_count > 0;
+      const permissionHint = deniedBySupplier ? '请核对绑定账号是否有此接口的权限'
+        : current?.collection_state === 'permission_missing' ? '请核对这个来源在本机登记的使用范围' : null;
       const cooling = !!current?.cooldown_until && Date.parse(current.cooldown_until) > Math.max(clock, Date.now());
       return <article className="source-runtime-item" key={adapter.family} aria-label={adapter.name}>
-        <div className="source-runtime-title"><h3>{adapter.name}</h3><span className="badge muted">{current ? states[current.collection_state] : '未配置'}</span></div>
+        <div className="source-runtime-title"><h3>{adapter.name}</h3><span className="badge muted">{deniedBySupplier ? '供应商拒绝访问' : current ? states[current.collection_state] : '未配置'}</span></div>
         <p>{adapter.capabilities.map(value => capabilities[value] ?? value).join(' / ')}</p>
         {adapter.family === 'chinanews_finance' && <p className="feature-note">官方财经滚动RSS，每15分钟一轮。只保留订阅提供的标题、摘要与出处；往期从采集起累积，未配置AI时按规则汇编。</p>}
         {adapter.family === 'cninfo_announcements' && <p className="feature-note">沪、深、北分别读取最近7日，每市场每轮最多5页、每页30条；达到上限时显示覆盖有限。公告只有日期时不补时钟。</p>}
@@ -143,7 +171,18 @@ export function SourceRuntime({ data, session, reload }: { data: SourceIndex; se
         {adapter.family === 'ashare_breadth' && <p className="feature-note">无需Key，每300秒读取供应商沪深涨跌家数和区间。源未提供行情日期/时间、完整分母或成交额，不称实时全市场；炸板与晋级未知。与其他AShare免费连接共享35秒请求间隔，等待预算不算上游失败。</p>}
         {adapter.family === 'ashare_sector_heat' && <p className="feature-note">无需Key，每300秒最多一轮/30条热门板块，含海外范围，关注排名并非涨幅/资金排名。榜单时间原文时区未明，不补行情时点，不创建本地证券身份。与其他AShare连接共享35秒预算；覆盖数按表版本计，板块条数见已入库表格。</p>}
         {['mairui_funds', 'mairui_pools'].includes(adapter.family) && <p className="feature-note">本人免费证书仅在本机安全配置，{current?.credential_configured ? '证书已安全配置' : '尚未检测到证书'}。官网500次/日，两连接共享本机450次/日预算，其他本人应用可能共用上游额度。{adapter.family === 'mairui_funds' ? '每小时2次，行业/个股盘后参考；原更新时间时区未明，概念资金暂不启用。' : '每15分钟3次，涨停/炸板/跌停池；按已核沪深日历选请求日期，来源无独立更新时间。'}覆盖数按表版本计，行数和全部字段见已入库数据；仅本人研究，禁止导出、转售与再分发。</p>}
-        <dl><dt>来源身份</dt><dd>{adapter.family}</dd><dt>采集开关</dt><dd>{!current ? '未配置' : !current.provider.enabled ? '未启用' : !data.collection_enabled ? '本机总开关关闭' : current.paused_reason ? '已暂停' : '已启用'}</dd><dt>最近尝试</dt><dd>{sourceTime(last?.received_at)}</dd><dt>最近成功返回</dt><dd>{sourceTime(current?.last_success_at)}</dd><dt>下次自动尝试</dt><dd>{current?.provider.enabled && data.collection_enabled && !current.paused_reason ? sourceTime(current.next_run_at) : '—'}</dd><dt>最近覆盖</dt><dd>{last ? `${last.accepted ?? '—'} 新增 / ${last.duplicates ?? '—'} 重复 / ${last.expected ?? '—'} 预期` : '—'}</dd><dt>未纳入记录</dt><dd>{last?.rejected ?? '—'}</dd><dt>原因</dt><dd>{reason(current?.paused_reason ?? last?.reason ?? null)}</dd><dt>费用记录</dt><dd>{current?.measured_cost_cny ?? '—'}</dd></dl>
+        <dl className="data-source-facts">
+          <div><dt>来源身份</dt><dd>{adapter.family}</dd></div>
+          <div><dt>采集开关</dt><dd>{!current ? '未配置' : !current.provider.enabled ? '未启用' : !data.collection_enabled ? '本机总开关关闭' : current.paused_reason ? '已暂停' : '已启用'}</dd></div>
+          <div><dt>费用记录</dt><dd>{current?.measured_cost_cny ?? '—'}</dd></div>
+          <div><dt>最近尝试</dt><dd>{sourceTime(last?.received_at)}</dd></div>
+          <div><dt>最近成功返回</dt><dd>{sourceTime(current?.last_success_at)}</dd></div>
+          <div><dt>下次自动尝试</dt><dd>{current?.provider.enabled && data.collection_enabled && !current.paused_reason ? sourceTime(current.next_run_at) : '—'}</dd></div>
+          <div><dt>最近覆盖</dt><dd>{last ? `${last.accepted ?? '—'} 新增 / ${last.duplicates ?? '—'} 重复 / ${last.expected ?? '—'} 预期` : '—'}</dd></div>
+          <div><dt>未纳入记录</dt><dd>{last?.rejected ?? '—'}</dd></div>
+          <div><dt>原因</dt><dd>{permissionHint ?? reason(current?.paused_reason ?? last?.reason ?? null)}</dd></div>
+        </dl>
+        {deniedBySupplier && current && connectionAction?.(current.provider.id)}
         {['tushare_market_rt','tushare_rt_indices','tushare_market_limits'].includes(adapter.family) && <p aria-label="Tushare批量行情范围">{adapter.family === 'tushare_market_rt' ? '沪深京A股通配符批量请求，每轮一个请求，不逐只配置或逐只轮询；报价保留每个股票自己的行情时间。涨跌停以当日最新价精确对照当日限制价，旧日、缺值、无正限制价不当成零；可比样本与未判定数在工作台和竞价页显示。' : adapter.family === 'tushare_rt_indices' ? '一次请求上证指数、深证成指、创业板指和科创50；不把指数当股票，不用股票代码首位猜交易所。' : '当日全市场价格限制原表；价格限制不等于曾触板或当前封板数量。当天表尚未取得时不借用前一天的限制价。自动检查安排在已核沪深开市日09:00–15:00；未发布可重试，最少间隔15分钟，实际配置见下方；非空表不等于全市场齐备，窗口内继续有界刷新。'}批量行情和四指数仅在已核沪深开市日的09:30–11:30、13:00–15:00采集，午休与收盘暂停；这是轮询窗口，不代表北交所日历已验。采集间隔、来源时点及实际覆盖分别核验，旧免费来源保留补缺。</p>}
         {['tushare_daily','tushare_index_daily'].includes(adapter.family) && <p>工作台按所选证券获取历史日K；单次窗口不超过五年、最多6000行，可继续向前获取。调用记录注明证券、请求范围与实际结果；原固定标的的自动计划保持。仅不复权历史已实现按需采集，不能把资料连接数当全市场历史覆盖。</p>}
         {adapter.family === 'tushare_rt_k' && <p aria-label="盘中行情采集策略">实时采集时段：北京时间09:30至11:30、13:00至15:00；11:30午休暂停、15:00收盘停止。仅在已核当日开市日历下请求一个明确沪深股票，实际采集间隔见当前配置。盘后查看已保存行情和发布后的日频资料；北交所等未核日历范围等待补齐。采集间隔不等于行情延迟，页面读取本机缓存，源行情时间与接收时间分别保留。</p>}

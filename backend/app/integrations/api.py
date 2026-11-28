@@ -10,8 +10,12 @@ from app.db import db_session
 from app.evidence.api import business_key
 from app.http import envelope
 from app.integrations.monitor_schemas import Calls, Overview
+from app.integrations.coverage_schemas import CoverageRepairInput, CoverageRepairReport, CoverageRepairStatus
+from app.integrations.inspection_schemas import Inspection, InspectionProgress, InspectionRun, RepairBatch
 from app.integrations.routing_schemas import (
     CapabilityMatrix,
+    ConfiguredPorts,
+    ConfigurePorts,
     FullMinuteRequest,
     MinuteChunkReceipt,
     MinuteJobView,
@@ -29,6 +33,65 @@ ERRORS = {code: {'model': Error} for code in (401, 403, 404, 422, 503)}
 def get_overview(request: Request, identity=Depends(principal), db: Session = Depends(db_session)):
     from app.integrations.monitor import overview
     return envelope(request, overview(db, identity[0]))
+
+
+@router.get('/api/v1/data-center/inspection', response_model=Envelope[Inspection], responses=ERRORS,
+            operation_id='getSystemInspection')
+def system_inspection(request: Request, identity=Depends(principal), db: Session = Depends(db_session)):
+    from app.auth import require_role
+    from app.integrations.inspection import inspect
+    require_role(identity[0], 'admin')
+    return envelope(request, inspect(db, identity[0]))
+
+
+@router.get('/api/v1/data-center/inspection/progress', response_model=Envelope[InspectionProgress], responses=ERRORS,
+            operation_id='getSystemInspectionProgress')
+def inspection_progress(request: Request, operation_key: str | None = Query(default=None, min_length=8, max_length=128, pattern=r'^[a-zA-Z0-9._:-]+$'),
+                        identity=Depends(principal), db: Session = Depends(db_session)):
+    from app.auth import require_role
+    from app.integrations.inspection_runs import read_progress
+    require_role(identity[0], 'admin')
+    return envelope(request, read_progress(db, identity[0], operation_key))
+
+
+@router.post('/api/v1/data-center/inspection/runs', response_model=Envelope[InspectionRun], status_code=202,
+             responses={**ERRORS, 409: {'model': Error}}, operation_id='startSystemInspectionRepair')
+def start_inspection_repair(request: Request, identity=Depends(csrf), key=Depends(business_key)):
+    from app.auth import require_role
+    from app.evidence.common import write_once
+    from app.integrations.inspection_runs import submit
+    require_role(identity[0], 'admin')
+    return write_once(request, identity[0], key, {}, lambda db: submit(db, identity[0]), status=202)
+
+
+@router.post('/api/v1/data-center/inspection/repair', response_model=Envelope[RepairBatch],
+             responses={**ERRORS, 409: {'model': Error}}, operation_id='repairSystemInspection')
+def repair_system_inspection(request: Request, identity=Depends(csrf), key=Depends(business_key)):
+    from app.auth import require_role
+    from app.evidence.common import write_once
+    from app.integrations.inspection_repair import repair
+    require_role(identity[0], 'admin')
+    return write_once(request, identity[0], key, {}, lambda db: repair(db, identity[0]), status=200)
+
+
+@router.get('/api/v1/data-center/coverage-repair', response_model=Envelope[CoverageRepairStatus],
+            responses=ERRORS, operation_id='getFeatureCoverageRepair')
+def feature_repair_status(request: Request, identity=Depends(principal), db: Session = Depends(db_session)):
+    from app.auth import require_role
+    from app.integrations.coverage_repair import latest
+    require_role(identity[0], 'admin')
+    return envelope(request, CoverageRepairStatus(last_repair=latest(db, identity[0])))
+
+
+@router.post('/api/v1/data-center/coverage-repair', response_model=Envelope[CoverageRepairReport],
+             responses={**ERRORS, 409: {'model': Error}}, operation_id='repairFeatureCoverage')
+def repair_feature_coverage(body: CoverageRepairInput, request: Request, identity=Depends(csrf), key=Depends(business_key)):
+    from app.auth import require_role
+    from app.evidence.common import write_once
+    from app.integrations.coverage_repair import submit
+    require_role(identity[0], 'admin')
+    return write_once(request, identity[0], key, body,
+        lambda db: (submit(db, identity[0], body, request.state.request_id), 'complete', []), status=200)
 
 
 @router.get('/api/v1/data-center/calls', response_model=Envelope[Calls], responses=ERRORS,
@@ -64,6 +127,17 @@ def update_routes(body: RoutesPatch, request: Request,
         lambda db: apply_routes(db, identity[0], body, request.state.request_id), status=200)
 
 
+@router.post('/api/v1/data-center/routes/configure', response_model=Envelope[ConfiguredPorts],
+             responses={**ERRORS, 409: {'model': Error}}, operation_id='configureDataPorts')
+def configure_data_ports(body: ConfigurePorts, request: Request, identity=Depends(csrf), key=Depends(business_key)):
+    from app.auth import require_role
+    from app.evidence.common import write_once
+    from app.integrations.routing import configure_ports
+    require_role(identity[0], 'admin')
+    return write_once(request, identity[0], key, body,
+        lambda db: configure_ports(db, identity[0], body, request.state.request_id), status=200)
+
+
 @router.post('/api/v1/data-center/providers/{provider_id}/connect', response_model=Envelope[CapabilityMatrix],
              responses={**ERRORS, 409: {'model': Error}}, operation_id='connectDataProvider')
 def connect_data_provider(provider_id: str, body: ProviderConnect, request: Request,
@@ -82,7 +156,7 @@ def connect_data_provider(provider_id: str, body: ProviderConnect, request: Requ
 def full_minute_chunk(body: FullMinuteRequest, request: Request, identity=Depends(csrf), key=Depends(business_key)):
     from app.auth import APIError, require_role
     from app.evidence.common import write_once
-    from app.integrations.routing import route_settings
+    from app.integrations.routing import route_settings, selected_providers
     from app.market.models import SourceSettings
     from app.market.service import source_id
     from app.market.tdx_full_minute import enqueue_full_minute
@@ -91,7 +165,7 @@ def full_minute_chunk(body: FullMinuteRequest, request: Request, identity=Depend
         config = db.get(SourceSettings, source_id('tdx_full_minute'))
         routes = route_settings(db)
         choice = (routes.choices if routes else {}).get('full_minute', {})
-        if not config or choice.get('provider_id') != 'tdx_data' or not choice.get('allow_points'):
+        if not config or 'tdx_data' not in selected_providers(choice) or not choice.get('allow_points'):
             raise APIError(422, 'full_minute_not_selected', '请先检测并选择通达信全量分钟能力，明确启用积分。')
         if not body.allow_points:
             raise APIError(422, 'points_confirmation_required', '每段最多20只，请明确允许本次积分请求。')

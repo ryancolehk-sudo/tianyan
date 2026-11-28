@@ -1,5 +1,10 @@
 """One truthful implementation ledger for the 31 catalogued capabilities."""
-from app.market.datasets import current_rows
+from sqlalchemy import cast, exists, func, or_, select
+from sqlalchemy.dialects.postgresql import JSONPATH
+from sqlalchemy.orm import aliased
+
+from app.evidence.models import EvidenceVersion
+from app.market.read_facets import value, with_facets
 from app.market.schemas import DataCapability, DataCoverage
 from app.market.news_feeds import NEWS_FEEDS
 
@@ -20,7 +25,7 @@ SCOPE = [
  ('D13','09:15 / 09:20竞价观察',('fuyao_auction','eastmoney_auction','tencent_auction','duanxianxia_auction','duanxianxia_auction_history'),('fuyao.auction_snapshot','market.auction.summary','market.duanxianxia.auction.summary'), '现有同花顺API原生竞价未匹配量；以当日限制价识别双侧，保留实际请求/返回/有效范围。09:15/09:20取节点后90秒内最早有效接收；响应时间不是交易所时刻，错过不补造。短线侠旧记录保留，采集已由管理员另行暂停。'),
  ('D14','09:25撮合结果与历史',('eastmoney_auction','tencent_auction','duanxianxia_auction','duanxianxia_auction_history'),('market.auction.summary','market.duanxianxia.auction.summary'), '09:25 仅表示来源时点命中该检查点，不是最终成交明细或完整竞价历史；逐笔/撤单/委托队列仍缺。短线侠历史表只提供逐日封单金额，不是撮合明细，也不补成连续历史。'),
  ('D15','逐笔、撤单与委托队列',(),(), '缺具备对应L2字段的行情权益或已核验免费来源。'),
- ('D16','快讯与基本资讯',('ecb_news','fed_public','hk_gov_finance', *NEWS_FEEDS),(), '香港与全球财经/科技/国际新闻RSS及央行发布；按实际配置及调用展示，保留原题/出处/时间精度，香港政府来源所有合法发布日期均只保留日期。同一媒体多个频道不算多家信源；内地商业快讯仍另核。'),
+ ('D16','快讯与基本资讯',('ecb_news','fed_public','hk_gov_finance', *NEWS_FEEDS),(), '香港与全球财经/科技/国际新闻RSS及央行发布；按实际配置及调用展示，保留原题/出处/时间精度，香港政府来源所有合法发布日期均只保留日期。同一媒体多个频道不算多家信源；同花顺、财联社及东方财富滚动快讯按采集窗口展示。'),
  ('D17','公司公告与风险披露',('cninfo_announcements',),(), '最近七日公开公告首页，保留标题/出处/时间；不下载全文，不代表全历史。'),
  ('D18','研报目录与评级',(),(), '目录与评级接口、具体自动化使用范围尚未核验；不复制付费研报。'),
  ('D19','财务三表与估值',('baostock_fundamental',),('financial.',), '最近四报告期的利润/资产负债/现金流/成长指标；并非完整原始三表。'),
@@ -40,6 +45,7 @@ SCOPE = [
 
 
 TUSHARE_SCOPE = {
+ 'D04': (('tencent_market_rt','tushare_market_rt'), ('tencent.rt_market','tushare.rt_market'), '查看已保存的批量行情截面，覆盖股票数和接收时点按来源批次核验。'),
  'D28': (('direction_ths_hot','direction_tdx_hot','direction_em_hot','direction_kpl_strength'),
      ('market.direction.',), '方向页三平台人气前10与开盘啦题材强度前10按来源独立保存；实际源日期与采集快照归档日分别标记，未知行情时点不补造。历史人气只查已有归档，不把当前榜补成过去排名。互动问答仍待接入。'),
  'D08': (('tushare_stk_limit',), ('tushare.stk_limit',), '已购Tushare所选股票近10日价格限制资料；不等于已涨停/停牌状态，完整生效规则仍缺。'),
@@ -47,12 +53,12 @@ TUSHARE_SCOPE = {
  'D01': (('tushare_stock_basic',), (), '已购Tushare目录优先；当前正常上市代码与简称，历史别名/退市仍缺。'),
  'D02': (('tushare_calendar_sse','tushare_calendar_szse'), (), '已购Tushare沪深月历优先；北交所预检空表，不代填日历。'),
  'D03': (('tushare_market_rt','tushare_rt_indices','tushare_rt_k','tushare_daily','tushare_index_daily'), (), '已购Tushare沪深京批量股票快照及四指数优先；按每行行情时间、实际覆盖与日期核验，不把停牌旧价当今日实时。免费源补缺。'),
- 'D12': (('direction_kpl_emotion','tushare_market_rt','tushare_market_limits'), ('market.direction.kpl_emotion','review.emotion_history','tushare.rt_market','tushare.market_limits'), '行情总览另存开盘啦原生每日历史情绪及实际补采时间，不回填旧盘中样本。开盘啦情绪独立60秒采样；是否接通以实际记录为准，来源仅提供日期，盘中曲线按接收时间保存；启用前不回填。Tushare批量行情与当日限制价精确比较当前封板；保留ST/不同涨跌幅股票，旧日/无正限制价不计，显示可比与未判定范围。接入前免费曲线保留原来源，不拼接或回填。'),
+ 'D12': (('direction_kpl_emotion','tushare_market_rt','tushare_market_limits'), ('market.direction.kpl_emotion','review.emotion_history','tushare.rt_market','tushare.market_limits','review.limits'), '行情总览另存开盘啦原生每日历史情绪及实际补采时间，不回填旧盘中样本。开盘啦情绪独立60秒采样；是否接通以实际记录为准，来源仅提供日期，盘中曲线按接收时间保存；启用前不回填。Tushare批量行情与当日限制价精确比较当前封板；保留ST/不同涨跌幅股票，旧日/无正限制价不计，显示可比与未判定范围。接入前免费曲线保留原来源，不拼接或回填。'),
  'D06': (('tushare_daily','tushare_daily_basic'), ('tushare.daily','tushare.daily_basic'), '已购Tushare单标的近180自然日日线/估值优先；不复权日K可看，免费三种复权历史保留。'),
  'D07': (('tushare_adj_factor',), ('tushare.adj_factor',), '已购Tushare单标的复权因子优先；不按当前因子伪造过去已知信息。'),
  'D09': (('tushare_ths_index','tushare_ths_member','tushare_ths_daily','direction_kpl_strength','tushare_index_basic_sse','tushare_index_basic_szse','eastmoney_boards'), ('tushare.ths_index','tushare.ths_member','tushare.ths_daily','market.direction.kpl_atlas_v1','tushare.index_basic','market.eastmoney.'), '同花顺概念目录、当前成分分页快照与板块日行情通过已购兼容通道独立登记；日频不当实时。开盘啦完整题材分页另存版本，原始强度及成交额与旧前十区分；领涨保留来源龙一至龙五原始标记。实际启用、历史覆盖及失败以采集记录为准，不以适配器存在当已接通。'),
  'D10': (('tushare_moneyflow','eastmoney_funds','tushare_moneyflow_dc','tushare_moneyflow_mkt_dc'), ('tushare.moneyflow','market.eastmoney.','review.stock_funds','review.market_funds'), '行情总览按已核交易日16:30自动归档DC个股/沪深大盘资金，原表万元/元分开；接通与覆盖以真实采集回执为准。已购Tushare所选股盘后资金保留；东方财富个股/行业/概念主力净额适配独立登记，每表一页最多200条。按实际源日与保存批次读取，未核权利/未采集不显示已接通。净额口径不同不拼表。'),
- 'D11': (('tushare_limit_list_d','tushare_limit_list_ths'), ('tushare.limit_list_d','tushare.limit_list_ths'), '已购Tushare涨跌停/炸板原榜优先，工作台分U/Z/D及原连板字段展示；日期来自返回，不是逐笔实时轨迹。复盘补充THS类型/原因/标签及每日指标；实际接通以归档成功为准。'),
+ 'D11': (('tushare_limit_list_d','tushare_limit_list_ths'), ('tushare.limit_list_d','tushare.limit_list_ths','review.pools','review.pool_details'), '已购Tushare涨跌停/炸板原榜优先，工作台分U/Z/D及原连板字段展示；日期来自返回，不是逐笔实时轨迹。复盘补充THS类型/原因/标签及每日指标；实际接通以归档成功为准。'),
  'D14': (('tushare_stk_auction','fuyao_auction'), ('tushare.stk_auction','fuyao.auction_snapshot'), '已购Tushare撮合成交与同花顺竞价未匹配量独立保存。原生final仅补最终竞价封单，保留真实迟收时间，不补造09:15/09:20或声明交易所09:25精确时刻。'),
  'D19': (('tushare_income','tushare_balancesheet','tushare_cashflow','tushare_fina_indicator'), ('tushare.income','tushare.balancesheet','tushare.cashflow','tushare.fina_indicator'), '已购Tushare最近4条财务返回优先，含三表部分字段、报告期与公告日；不是完整原始三表或全部报告期。'),
  'D21': (('tushare_top_list','tushare_top_inst','tushare_block_trade','tushare_margin_detail'), ('tushare.top_list','tushare.top_inst','tushare.block_trade','tushare.margin_detail'), '已购Tushare龙虎榜/买卖席位、大宗与两融优先；席位按股票、交易日、原因和买卖类型区分，权益与实际成功逐连接核验，不把登记当接通。新解析单位明确，旧未知不补造。'),
@@ -61,30 +67,65 @@ TUSHARE_SCOPE = {
 }
 
 
+def proof(db, ids, kind, prefixes=(), rate=False):
+    """Find an actual current revision in this capability's own sources, across all dates."""
+    if not ids:
+        return None
+    e = EvidenceVersion
+    newer = aliased(e)
+    query = select(e.id).where(e.source_id.in_(ids), e.kind == kind, e.visibility == 'shared',
+        e.owner_id.is_(None), e.received_at <= func.now(),
+        ~exists(select(newer.id).where(newer.source_id == e.source_id, newer.source_key == e.source_key,
+            newer.kind == e.kind, newer.visibility == 'shared', newer.owner_id.is_(None),
+            newer.version_number > e.version_number, newer.received_at <= func.now())))
+    if prefixes:
+        dataset = value('dataset')
+        query = with_facets(query).where(or_(*(dataset.startswith(prefix, autoescape=True) for prefix in prefixes)),
+            func.jsonb_array_length(e.payload['rows']) > 0)
+        if rate:
+            query = query.where(or_(dataset == 'tushare.shibor', func.jsonb_path_exists(e.payload, cast(
+                '$.rows[*] ? (@.indicator like_regex "^FR[.]INR[.]" && @.value != null)', JSONPATH))))
+    return db.scalar(query.limit(1))
+
+
 def coverage(db):
-    from app.market.service import source_states
-    sources={row.family:row for row in source_states(db)}
-    reference=current_rows(db,'reference',maximum=100)
-    valid_bars=current_rows(db,'bar',maximum=1,family='baostock_history')
-    valid_bars+=current_rows(db,'bar',maximum=1,family='tushare_daily')
-    result=[]
-    for ident,name,families,prefixes,detail in SCOPE:
+    from app.market.service import permission_reason, source_states
+    from app.market.models import InstrumentOrigin
+    from app.models import Provider
+    sources = {source.family: source for source in source_states(db)}
+    permitted = {provider.family: provider.id for provider in db.scalars(select(Provider))
+                 if provider.family in sources and not permission_reason(provider)}
+    result = []
+    for ident, name, families, prefixes, detail in SCOPE:
         if ident in TUSHARE_SCOPE:
-            paid_families,paid_prefixes,detail=TUSHARE_SCOPE[ident]
-            families=(*paid_families,*families)
-            prefixes=(*paid_prefixes,*prefixes)
-        matching=[e for e,p in reference if p.family in families and any(e.payload.get('dataset','').startswith(prefix) for prefix in prefixes) and e.payload.get('rows')]
-        if ident=='D26':
-            matching=[e for e in matching if e.payload.get('dataset')=='tushare.shibor' or any(row.get('indicator','').startswith('FR.INR.') and row.get('value') is not None for row in e.payload['rows'])]
-        actual=bool(matching)
-        if ident=='D06':actual=bool(valid_bars)
-        if not prefixes:
-            actual=any(f in sources and sources[f].collection_state in {'ready','partial','empty'} and
-                (sources[f].last_attempt.accepted or 0)+(sources[f].last_attempt.duplicates or 0)>0 for f in families)
-        if ident=='D05':
-            actual=any(current_rows(db,'bar',maximum=1,family=family) for family in families)
-        if ident in {'D29','D31'}:actual=True
-        blocked=ident in {'D15','D30'}
-        result.append(DataCapability(id=ident,name=name,state='partial' if actual else 'blocked' if blocked else 'pending',detail=detail,
-            families=list(families),dataset_ids=[e.id for e in matching]))
+            additional, datasets, detail = TUSHARE_SCOPE[ident]
+            families, prefixes = (*additional, *families), (*datasets, *prefixes)
+        ids = [permitted[f] for f in families if f in permitted]
+        sample = None
+        kind = {'D02':'calendar','D03':'quote','D05':'bar','D06':'bar','D16':'news','D17':'news'}.get(ident)
+        if ident == 'D04':
+            # Both market adapters persist all large snapshots under a fixed key.
+            # Seek the current revision before reading its several thousand rows.
+            e = EvidenceVersion
+            for family, dataset in zip(families, prefixes):
+                if family not in permitted:
+                    continue
+                current = select(e.id).where(e.source_id == permitted[family], e.owner_id.is_(None),
+                    e.source_key == 'reference:' + dataset, e.kind == 'reference', e.visibility == 'shared',
+                    e.received_at <= func.now()).order_by(e.version_number.desc()).limit(1).correlate(None)
+                sample = db.scalar(select(e.id).where(e.id == current.scalar_subquery(),
+                    e.payload['dataset'].astext == dataset, func.jsonb_array_length(e.payload['rows']) > 0))
+                if sample is not None:
+                    break
+        elif kind:
+            sample = proof(db, ids, kind)
+        elif prefixes:
+            sample = proof(db, ids, 'reference', prefixes, rate=ident == 'D26')
+        actual = sample is not None or ident in {'D29', 'D31'}
+        if ident == 'D01' and ids:
+            actual = db.scalar(select(InstrumentOrigin.id).where(InstrumentOrigin.source_id.in_(ids),
+                InstrumentOrigin.origin_kind == 'catalog', InstrumentOrigin.last_observed_at <= func.now()).limit(1)) is not None
+        state = 'partial' if actual else 'blocked' if ident in {'D15', 'D30'} else 'pending'
+        result.append(DataCapability(id=ident, name=name, state=state, detail=detail,
+            families=list(dict.fromkeys(families)), dataset_ids=[sample] if sample else []))
     return DataCoverage(items=result)

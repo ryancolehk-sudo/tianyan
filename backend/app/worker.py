@@ -341,6 +341,16 @@ def lease_renewal(job):
 
 
 def process(job: Job):
+    if job.kind == 'inspection.repair':
+        from app.integrations.inspection_runs import process_run
+        with lease_renewal(job):
+            process_run(job)
+        return
+    if job.kind == 'coverage.connect':
+        from app.integrations.coverage_routes import process_follow
+        with lease_renewal(job):
+            process_follow(job)
+        return
     if job.kind == 'funds.focus':
         from app.market.fund_focus import process_job
         with lease_renewal(job):

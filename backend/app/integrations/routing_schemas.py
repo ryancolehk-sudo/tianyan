@@ -1,5 +1,6 @@
 from datetime import date
 from typing import Literal
+from uuid import UUID
 
 from pydantic import Field, SecretStr, StrictBool, field_validator
 
@@ -46,6 +47,7 @@ class RouteCapability(DTO):
     description: str
     routable: bool = True
     current_provider_id: str | None
+    fallback_provider_ids: list[str] = Field(default_factory=list)
     effective_provider_id: str | None
     options: list[CapabilityOption]
 
@@ -60,6 +62,7 @@ class CapabilityMatrix(DTO):
 class RouteChange(DTO):
     capability_id: str = Field(min_length=1, max_length=80)
     provider_id: str = Field(min_length=1, max_length=100)
+    fallback_provider_ids: list[str] = Field(default_factory=list, max_length=20)
     allow_points: StrictBool = False
 
 
@@ -68,9 +71,28 @@ class RoutesPatch(DTO):
     changes: list[RouteChange] = Field(min_length=1, max_length=40)
 
 
+class ConfigurePorts(DTO):
+    expected_revision: int = Field(ge=1)
+    provider_id: str | None = Field(default=None, min_length=1, max_length=100)
+    capability_id: str | None = Field(default=None, min_length=1, max_length=100)
+
+
+class PortResult(DTO):
+    provider_id: str
+    capability_id: str
+    state: Literal['configured', 'existing', 'attention']
+    reason: str
+
+
+class ConfiguredPorts(DTO):
+    matrix: CapabilityMatrix
+    items: list[PortResult]
+
+
 class ProviderConnect(DTO):
     api_key: SecretStr | None = Field(default=None, repr=False)
     allow_points: StrictBool = False
+    points_source_id: UUID | None = None
 
     @field_validator('api_key')
     @classmethod

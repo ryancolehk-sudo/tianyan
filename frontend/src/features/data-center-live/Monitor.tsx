@@ -3,6 +3,7 @@ import { Icon } from '../../shared/icons';
 import type { IconName } from '../../shared/icons';
 import { dataCenterApi } from './api';
 import { RecoveryPanel } from './RecoveryPanel';
+import { InspectionPanel } from './SystemInspection';
 import type { CallFilters, CallRecord, ConnectionView, Issue, Overview } from './api';
 import { dateTime, duration, Empty, ErrorNotice, kindNames, Panel, reasonLabel, Status, Toggle, useResource } from './shared';
 import { updateLocation, useNavigation } from '../../shared/navigation';
@@ -84,9 +85,10 @@ function CallLog({ connections, refreshVersion, updatedAt, sourceId = '' }: { co
   </Panel>;
 }
 
-export function Monitor({ overview, connections, loading, error, refresh, configure, refreshVersion }: {
+export function Monitor({ overview, connections, loading, error, refresh, configure, refreshVersion, admin, csrf, account }: {
   overview: Overview | undefined; connections: ConnectionView[]; loading: boolean; error: unknown;
-  refresh: () => void; configure: (id: string | null) => void; refreshVersion: number;
+  refresh: () => void; configure: (id: string | null, initialKind?: 'market' | 'model', sourceId?: string) => void;
+  refreshVersion: number; admin: boolean; csrf: string; account: string;
 }) {
   const navigation = useNavigation();
   const focus = monitorContext(navigation.search);
@@ -112,6 +114,7 @@ export function Monitor({ overview, connections, loading, error, refresh, config
     { label: '待处理', value: overview?.pending_issues, unit: '项', note: overview?.issues[0]?.title ?? '当前待处理异常', icon: 'shield', tone: 'gold' },
   ];
   return <div className="dc-monitor">
+    {admin && <InspectionPanel key={account} account={account} csrf={csrf} refreshVersion={refreshVersion} connections={connections} configure={configure}/>}
     <section className="dc-monitor-context" aria-label="监控定位">
       <div><strong>{focus.history ? '历史资料定位' : '当前运行定位'}</strong><span>{focus.sourceId ? `${source?.name ?? '来源名称待核'}${capability ? ' · ' + capability.name : ''}` : '全部来源'}{focus.tradeDay ? ` · 资料日 ${focus.tradeDay}` : ' · 当前核验'}</span>
         {focus.sourceId && <details><summary>来源编号</summary><code>{focus.sourceId}</code></details>}

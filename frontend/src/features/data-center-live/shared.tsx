@@ -64,8 +64,8 @@ export function Panel({ title, children, action, className = '' }: PropsWithChil
 export function Empty({ title, children }: PropsWithChildren<{ title: string }>) {
   return <div className="dc-empty"><Icon name="data"/><strong>{title}</strong>{children && <span>{children}</span>}</div>;
 }
-export function ErrorNotice({ error, retry }: { error: unknown; retry?: () => void }) {
-  if (notifiedReadError(error)) return null;
+export function ErrorNotice({ error, retry, inline = false }: { error: unknown; retry?: () => void; inline?: boolean }) {
+  if (!inline && notifiedReadError(error)) return null;
   return <div className="dc-alert dc-alert-error" role="alert"><Icon name="info"/><span>{messageOf(error)}</span>{retry && <button type="button" onClick={retry}>重试</button>}</div>;
 }
 export function Status({ value, label }: { value: string; label?: string }) {
@@ -74,7 +74,10 @@ export function Status({ value, label }: { value: string; label?: string }) {
 export function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onChange: () => void; disabled?: boolean; label: string }) {
   return <button type="button" className={'dc-toggle' + (checked ? ' is-on' : '')} role="switch" aria-checked={checked} aria-label={label} disabled={disabled} onClick={onChange}><span/></button>;
 }
-export function useResource<T>(load: () => Promise<T>) {
-  const read = useCachedLoader(load, load);
+const inactiveResource = () => Promise.resolve(null);
+
+export function useResource<T>(load: () => Promise<T>, active = true) {
+  const reader = active ? load : inactiveResource;
+  const read = useCachedLoader<T | null>(reader, reader);
   return { ...read, data: read.data ?? null };
 }

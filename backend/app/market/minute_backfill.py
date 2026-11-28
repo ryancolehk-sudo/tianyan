@@ -102,7 +102,7 @@ def validate_context(db, payload, provider, config, clock):
     return day
 
 
-def live_run_condition():
+def live_run_condition(*, by_job=False):
     from app.market.review_protocol import PUBLIC_FAMILIES
     from app.market.review_store import family_id
     historical_jobs = select(Job.id).where(or_(
@@ -113,6 +113,11 @@ def live_run_condition():
         (Job.kind == 'source.collect') & Job.payload.has_key('review_context'),
         (Job.kind == 'review.collect') & ~Job.payload['source_id'].astext.in_([str(family_id(family)) for family in PUBLIC_FAMILIES])))
     from app.market.models import DataFetchRun
+    if by_job:
+        # An ordered lookup needs to inspect only jobs belonging to candidate
+        # receipts. Keep the historical predicate identical for all readers.
+        return (historical_jobs.where(Job.id == DataFetchRun.job_id).correlate(DataFetchRun)
+                .limit(1).scalar_subquery().is_(None))
     return (DataFetchRun.job_id.is_(None) | ~DataFetchRun.job_id.in_(historical_jobs))
 
 

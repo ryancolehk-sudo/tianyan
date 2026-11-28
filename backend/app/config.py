@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     build_revision: str = "development"
     data_collection_enabled: bool = False
     anomaly_collection_enabled: bool = False
+    seat_label_lookup_enabled: bool = False
     required_worker_roles: list[Literal['scheduler', 'realtime', 'recovery', 'general']] = Field(default_factory=list)
     recovery_enabled: bool = True
     recovery_interval_seconds: int = Field(default=300, ge=30, le=3600)

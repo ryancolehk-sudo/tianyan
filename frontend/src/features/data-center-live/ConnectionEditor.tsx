@@ -46,8 +46,8 @@ function AdvancedDataSettings({ session, refresh }: { session: SessionResponse; 
     : read.error ? <ErrorNotice error={read.error} retry={read.reload}/> : <Empty title="正在读取原有采集配置"/>}</details>;
 }
 
-export function ConnectionEditor({ initial, initialKind = 'model', simpleModel = false, index, session, onSaved, cancel, refresh, useForPlan }: {
-  initial: ConnectionView | null; index: ConnectionIndex; session: SessionResponse;
+export function ConnectionEditor({ initial, initialSourceId, initialKind = 'model', simpleModel = false, index, session, onSaved, cancel, refresh, useForPlan }: {
+  initial: ConnectionView | null; initialSourceId?: string; index: ConnectionIndex; session: SessionResponse;
   initialKind?: ConnectionKind; simpleModel?: boolean;
   onSaved: (item: ConnectionView) => void; cancel: () => void; refresh: () => void; useForPlan?: (id: string) => void;
 }) {
@@ -65,7 +65,8 @@ export function ConnectionEditor({ initial, initialKind = 'model', simpleModel =
   const [showKey, setShowKey] = useState(false);
   const [sourceIds, setSourceIds] = useState(initial?.source_ids ?? []);
   const [sourceLabels, setSourceLabels] = useState<Record<string, string>>({});
-  const [testSource, setTestSource] = useState(initial?.source_ids[0] ?? '');
+  const [testSource, setTestSource] = useState(initialSourceId && initial?.source_ids.includes(initialSourceId)
+    ? initialSourceId : initial?.source_ids[0] ?? '');
   const [timeout, setTimeout] = usePrivateDraft(session.data.user.id, draftId + ':timeout', () => initial?.options.timeout_seconds ?? 60, false);
   const [maxTokens, setMaxTokens] = usePrivateDraft(session.data.user.id, draftId + ':max-tokens', () => initial?.options.max_output_tokens ?? 1200, false);
   const [inputPrice, setInputPrice] = usePrivateDraft(session.data.user.id, draftId + ':input-price', () => String(initial?.options.input_price_per_million_cny ?? ''), false);

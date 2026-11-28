@@ -6,7 +6,7 @@ import { Loading, useBoundRead } from './components';
 import { number, pct, tone } from './model';
 import type { Coverage } from './model';
 import type { ReviewProps } from './context';
-import { Plot, red } from './postcloseVisuals';
+import { HighsTrend } from './HighsTrend';
 import type { Point } from './postcloseVisuals';
 import './newHighs.css';
 
@@ -52,7 +52,7 @@ function Donut({groups,total,selected,onSelect}:{groups:Group[];total:number|nul
   </svg>;
 }
 
-export function NewHighs({day,asOf,select,automaticDay,onResolvedDay,onCoverage}:{day:string;asOf:string;select:ReviewProps['select'];automaticDay:boolean;onResolvedDay:(day:string)=>void;onCoverage:(entries:Coverage[])=>void}){
+export function NewHighs({day,asOf,select,automaticDay,onResolvedDay,onCoverage,repair,collecting}:{repair?:()=>void;collecting:boolean;day:string;asOf:string;select:ReviewProps['select'];automaticDay:boolean;onResolvedDay:(day:string)=>void;onCoverage:(entries:Coverage[])=>void}){
   const nav=useNavigation(),q=new URLSearchParams(nav.search),start=q.get('nh_start')||'',multi=!!start;
   const query=new URLSearchParams({...(!automaticDay?{trade_day:day}:{}),...(start?{start_day:start}:{}),...(asOf?{as_of_time:asOf}:{})});
   const read=useBoundRead(`new-highs:${query}`,async()=>{const response=await request<{data:Highs}>(`/api/v1/review-data/new-highs?${query}`);const data=response.data;if(!data||!Array.isArray(data.rows)||!Array.isArray(data.groups)||!Array.isArray(data.records)||!Array.isArray(data.trade_days)||typeof data.trade_day!=='string')throw new Error('百日新高响应不完整，请重试。');return response;});
@@ -97,7 +97,7 @@ export function NewHighs({day,asOf,select,automaticDay,onResolvedDay,onCoverage}
   const listState=!listComplete?'incomplete':sourceEmpty?'empty':visible.length?'ready':'no-match';
   const countText=!listComplete?(data?.rows.length?`已载入 ${data.rows.length} 只 · 完整数量待核`:'完整名单未就绪 · 数量待核'):hasSelection?`筛选后 ${visible.length} 只 / 全部 ${data.total} 只`:`共 ${data.total} 只`;
   const clearSelection=()=>{setGroup('');setFilters({newOnly:false,excludeST:false,excludeBJ:false,minPrice:'',maxPrice:'',minAmount:''});};
-  const emptyList=<div className="dr-empty"><div className="nh-list-empty" role="status"><strong>{!listComplete?'完整名单尚未就绪':sourceEmpty?'完整名单已核对，本范围没有新高股票':'没有符合筛选条件的股票'}</strong><p>{!listComplete?(data?.rows.length?'已载入范围中暂无匹配，完整名单的最终数量仍待核对。':'数量与筛选结果暂不可判断，趋势保留独立已存资料。'):sourceEmpty?'所选日期的完整名单已入库，新高数量确认为0。':`完整名单共 ${data.total} 只，当前筛选没有匹配。`}</p><div>{hasSelection&&<button onClick={clearSelection}>清除筛选</button>}{!listComplete&&<button disabled={read.busy} onClick={read.reload}>重新读取名单</button>}</div></div></div>;
+  const emptyList=<div className="dr-empty"><div className="nh-list-empty" role="status"><strong>{!listComplete?'完整名单尚未就绪':sourceEmpty?'完整名单已核对，本范围没有新高股票':'没有符合筛选条件的股票'}</strong><p>{!listComplete?(data?.rows.length?'已载入范围中暂无匹配，完整名单的最终数量仍待核对。':'数量与筛选结果暂不可判断，趋势保留独立已存资料。'):sourceEmpty?'所选日期的完整名单已入库，新高数量确认为0。':`完整名单共 ${data.total} 只，当前筛选没有匹配。`}</p><div>{hasSelection&&<button onClick={clearSelection}>清除筛选</button>}{!listComplete&&<button disabled={read.busy} onClick={read.reload}>重新读取名单</button>}{!listComplete&&repair&&<button type="button" disabled={collecting} onClick={repair}>{collecting?'正在补采…':'补采新高名单'}</button>}</div></div></div>;
   const points:Point[]=(data?.records||[]).map(r=>{
     const totals=group?r.group_counts&&selectedMembers.map(name=>r.group_counts?.[name]||{count:0,new_count:0}):null;
     return{trade_day:r.trade_day,state:r.total===null?'unavailable':'complete',leaders:{},values:{count:group?(totals?totals.reduce((n,g)=>n+g.count,0):null):r.total,new:group?(totals?totals.reduce((n,g)=>n+g.new_count,0):null):r.new_count}};
@@ -116,7 +116,7 @@ export function NewHighs({day,asOf,select,automaticDay,onResolvedDay,onCoverage}
     </div>
     {read.error&&<div className="dr-error" role="alert">{read.error.message}<button onClick={read.reload}>重试</button></div>}{read.busy&&!data?<Loading text="正在读取百日新高资料…"/>:data&&<>
       {!listComplete&&<div className="nh-missing" role="status">{data.missing_days?.length?`${data.missing_days.length}个交易日的完整名单尚未入库。`:'完整名单尚未就绪。'}数量与筛选结果待核，可在“资料工具”中补齐。</div>}
-      <div className="nh-charts" style={{'--nh-label-height':`${labelHeight}px`} as CSSProperties}><div className="nh-distribution"><Donut groups={groups} total={listComplete?(activeFilters?filtered.length:data.total):null} selected={group} onSelect={chooseGroup}/></div><div className="nh-trend"><Plot spec={{title:group?`新高趋势 · ${group}`:'新高趋势',lines:[{key:'count',label:'新高数量',color:red},{key:'new',label:'当日新增',color:'#ba7783',bar:true}]}} points={points}/></div></div>
+      <div className="nh-charts" style={{'--nh-label-height':`${labelHeight}px`} as CSSProperties}><div className="nh-distribution"><Donut groups={groups} total={listComplete?(activeFilters?filtered.length:data.total):null} selected={group} onSelect={chooseGroup}/></div><div className="nh-trend"><HighsTrend points={points} group={group} day={data.trade_day}/></div></div>
       <div className="nh-results"><div className="nh-results-head"><div className="nh-switch" role="group" aria-label="明细视图"><button className={layout==='groups'?'selected':''} aria-pressed={layout==='groups'} onClick={()=>setLayout('groups')}>按板块</button><button className={layout==='stocks'?'selected':''} aria-pressed={layout==='stocks'} onClick={()=>setLayout('stocks')}>按个股</button></div><span className="nh-count-state" role="status" aria-label="新高名单计数">{countText}</span><span className="nh-new-key"><i/>{multi?'期间新增':'今日新增'}</span></div><div className="nh-mobile-sort"><label>排序<select aria-label="新高排序字段" value={sort.field} onChange={e=>setSort({...sort,field:e.target.value as Field})}>{columns.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><button onClick={()=>setSort({...sort,asc:!sort.asc})} aria-label={`新高切换为${sort.asc?'降序':'升序'}`}>{sort.asc?'升序':'降序'}</button></div>
         <div className="nh-tags" aria-label="新高板块筛选"><button className={!group?'selected':''} aria-pressed={!group} onClick={()=>setGroup('')}>全部板块</button>{groups.map((g,i)=><button key={g.name} style={{'--nh-sector':colors[i%colors.length]} as React.CSSProperties} className={group===g.name?'selected':''} aria-pressed={group===g.name} onClick={()=>chooseGroup(g.name)}>{g.name} <b>{g.count}</b></button>)}</div>
         <div ref={results} className={`nh-results-scroll ${layout==='groups'?'nh-group-grid':''}`} role="region" aria-label="新高股票完整名单" tabIndex={0}>{layout==='stocks'?table(visible,'全部新高股票'):groups.filter(g=>!group||g.name===group).map((g,i)=>{

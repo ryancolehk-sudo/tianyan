@@ -3,7 +3,7 @@ from collections import defaultdict
 from datetime import date, datetime
 from uuid import NAMESPACE_URL, UUID, uuid5
 
-from sqlalchemy import select
+from sqlalchemy import case, or_, select
 
 from app.auth import APIError
 from app.evidence.common import lock, normalized
@@ -122,23 +122,24 @@ def _data_time(payload, published_at, event_at, family=None):
     if family in DIRECTION_FAMILIES:
         # Public heat lists can only expose a local snapshot day. Only dates
         # explicitly supplied by the vendor qualify as data time here.
-        values = [row.get('source_time') or row.get('source_day')
-                  for row in payload.get('rows', [])]
+        values = (row.get('source_time') or row.get('source_day')
+                  for row in payload.get('rows', []))
         return max((value for value in values if isinstance(value, str) and value), default=None)
     # Prefer actual source clocks/dates over an observation-day label. Tushare
     # reference tables use observed_day for the local receiving day, and Mairui
     # pools use the requested day; neither is independent publication evidence.
+    rows = payload.get('rows', [])
     groups = [
-        [(payload, ('quote_time', 'source_time'))],
-        [(row, ('trade_time', 'quote_time')) for row in payload.get('rows', [])],
-        [(payload, ('trade_day', 'data_day', 'period_end', 'date', 'month'))],
-        [(row, ('trade_date', 'cal_date', 'date', 'data_date', 'f_ann_date', 'ann_date')) for row in payload.get('rows', [])],
+        ((payload,), ('quote_time', 'source_time')),
+        (rows, ('trade_time', 'quote_time')),
+        ((payload,), ('trade_day', 'data_day', 'period_end', 'date', 'month')),
+        (rows, ('trade_date', 'cal_date', 'date', 'data_date', 'f_ann_date', 'ann_date')),
     ]
     if family not in TUSHARE_FAMILIES and family != 'mairui_pools':
-        groups.append([(payload, ('observed_day',))])
-    for group in groups:
-        values = []
-        for row, keys in group:
+        groups.append(((payload,), ('observed_day',)))
+    for records, keys in groups:
+        latest = None
+        for row in records:
             for key in keys:
                 value = row.get(key)
                 if not isinstance(value, (str, date, datetime)) or not value:
@@ -149,29 +150,46 @@ def _data_time(payload, published_at, event_at, family=None):
                         value = date.fromisoformat(value).isoformat()
                     except ValueError:
                         continue
-                values.append(value)
-        if values:
-            return max(values)
+                if latest is None or value > latest:
+                    latest = value
+        if latest is not None:
+            return latest
     return None
 
 
-def _snapshot(db):
-    key = 'integrations.source_snapshot'
+def _latest_data_times(db, families):
+    if not families:
+        return {}
+    evidence = EvidenceVersion
+    # Sort only receipt keys. Sorting the historical JSON bodies can exhaust
+    # the database before it returns even the first supplier.
+    newest = (select(evidence.id)
+              .where(evidence.owner_id.is_(None), evidence.source_id.in_(families))
+              .distinct(evidence.source_id)
+              .order_by(evidence.source_id, evidence.received_at.desc(), evidence.id.desc())
+              .subquery())
+    capture_source = next((key for key, family in families.items() if family == 'tencent_market_rt'), None)
+    needs_body = or_(evidence.source_id == capture_source,
+                     evidence.published_at.is_(None) & evidence.event_at.is_(None))
+    clocks = select(evidence.source_id, case((needs_body, evidence.payload)),
+                    evidence.published_at, evidence.event_at).join(newest, newest.c.id == evidence.id)
+    # Some sources publish a whole reference table in one receipt.
+    return {source: _data_time(payload or {}, published, event, families[source])
+            for source, payload, published, event in db.execute(clocks.execution_options(yield_per=1))}
+
+
+def _snapshot(db, *, include_data_time=True):
+    key = 'integrations.source_snapshot' if include_data_time else 'integrations.routing_snapshot'
     if key not in db.info:
         from app.market.service import source_states
         states = source_states(db)
-        families = {str(state.provider.id): state.family for state in states}
-        latest = db.execute(select(EvidenceVersion.source_id, EvidenceVersion.payload,
-                                   EvidenceVersion.published_at, EvidenceVersion.event_at)
-                            .where(EvidenceVersion.owner_id.is_(None))
-                            .distinct(EvidenceVersion.source_id)
-                            .order_by(EvidenceVersion.source_id, EvidenceVersion.received_at.desc(), EvidenceVersion.id.desc()))
-        times = {str(source): _data_time(payload, published, event, families.get(str(source))) for source, payload, published, event in latest}
+        families = {state.provider.id: state.family for state in states}
+        times = _latest_data_times(db, families) if include_data_time else {}
         db.info[key] = {str(state.provider.id): {
             'source_id': str(state.provider.id), 'family': state.family, 'name': state.provider.name,
             'state': state.collection_state, 'enabled': state.provider.enabled,
             'last_success_at': state.last_success_at.isoformat() if state.last_success_at else None,
-            'data_time': times.get(str(state.provider.id)), 'interval_seconds': state.interval_seconds,
+            'data_time': times.get(state.provider.id), 'interval_seconds': state.interval_seconds,
             'credential_configured': state.credential_configured,
             'last_attempt': normalized(state.last_attempt) if state.last_attempt else None,
             'cooldown_until': state.cooldown_until.isoformat() if state.cooldown_until else None,
@@ -187,11 +205,11 @@ def capabilities(db, conn):
             if identity in snapshot]
 
 
-def virtual_connections(db):
+def virtual_connections(db, *, include_data_time=True):
     stored = connections(db)
     bound = {identity for row in stored for identity in row.source_ids}
     groups = defaultdict(list)
-    for identity, state in _snapshot(db).items():
+    for identity, state in _snapshot(db, include_data_time=include_data_time).items():
         if identity not in bound:
             groups[_source_template(state['family'])].append(state)
     output = []

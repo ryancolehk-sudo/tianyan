@@ -6,11 +6,13 @@ Reading it never probes a vendor, writes a credential, or enables a job.
 from uuid import UUID
 
 from sqlalchemy import select, text
+from sqlalchemy.orm import undefer
 
 from app.auth import APIError
 from app.evidence.common import content_hash, lock, now
 from app.integrations.routing_models import DataRoutes
 from app.market.models import DataFetchRun, SourceSettings
+from app.market.run_heads import latest_source_runs, receipt_jobs
 from app.models import AuditEvent, Job, Provider
 
 CHECKED = '2026-10-25'
@@ -91,6 +93,27 @@ def families_for(capability_id, provider_id):
     return [family for family in route[3].get(provider_id, ()) if family in SOURCES] if route else []
 
 
+def selected_providers(choice):
+    if not choice.get('provider_id'):
+        return []
+    return [choice['provider_id'], *choice.get('fallback_provider_ids', [])]
+
+
+def selected_families(capability_id, choice):
+    return [family for provider in selected_providers(choice) for family in families_for(capability_id, provider)]
+
+
+def route_blocker(option):
+    if not option['implemented']:
+        return 'not_adapted'
+    if option['entitlement'] == 'locked':
+        return 'permission_missing'
+    if option['state'] in {'disabled', 'paused', 'points_not_enabled', 'permission_missing', 'credentials_missing',
+                           'error', 'failed', 'unavailable', 'empty', 'time_unverified', 'not_configured'}:
+        return option['state']
+    return None if option['entitlement'] == 'verified' else 'not_checked'
+
+
 def billing(provider_id, capability_id):
     if provider_id == 'tdx_data':
         return 'points', 'MCP与数据服务均消耗AI积分；赠送积分同样计量，实际扣减以商城明细为准。', TDX
@@ -116,7 +139,7 @@ def _connection_rows(db):
     from app.integrations.data import virtual_connections
     current = list(connections(db))
     rows = {key: next((row for row in current if row.template == key and not row.archived), None) for key in _definitions()}
-    virtual = {row['template']: row for row in virtual_connections(db)}
+    virtual = {row['template']: row for row in virtual_connections(db, include_data_time=False)}
     return rows, virtual
 
 
@@ -141,7 +164,7 @@ def _source_connection(db, source_id):
 
 def _current_source_success(db, source, config, success, choice):
     connection, binding_valid = _source_connection(db, source.id)
-    success_job = db.get(Job, success.job_id) if success and success.job_id else None
+    success_job = db.info['routing.receipt_jobs'].get(success.job_id) if success and success.job_id else None
     # Configuration and job creation share the database clock; vendor receipts
     # are not a replacement for that configuration boundary.
     proof_created_at = success_job.created_at if success_job else success.received_at if success else None
@@ -171,13 +194,11 @@ def _source_snapshot(db):
     from app.market.service import source_states
     states = {row.family: row for row in source_states(db)}
     configs = {row.source_id: row for row in db.scalars(select(SourceSettings))}
-    rows = {row.family: row for row in db.scalars(select(Provider).where(Provider.family.is_not(None)))}
-    latest = {row.source_id: row for row in db.scalars(select(DataFetchRun)
-              .distinct(DataFetchRun.source_id).order_by(DataFetchRun.source_id, DataFetchRun.received_at.desc(), DataFetchRun.id.desc()))}
-    successes = {row.source_id: row for row in db.scalars(select(DataFetchRun).where(
-        DataFetchRun.status.in_(['complete', 'partial']),
-        (DataFetchRun.accepted > 0) | (DataFetchRun.duplicates > 0))
-        .distinct(DataFetchRun.source_id).order_by(DataFetchRun.source_id, DataFetchRun.received_at.desc(), DataFetchRun.id.desc()))}
+    rows = {row.family: row for row in db.scalars(select(Provider).options(undefer(Provider.family))
+                                                 .where(Provider.family.is_not(None)))}
+    latest, successes = latest_source_runs(db, list(configs), DataFetchRun.status.in_(['complete', 'partial'])
+                                           & ((DataFetchRun.accepted > 0) | (DataFetchRun.duplicates > 0)))
+    db.info['routing.receipt_jobs'] = receipt_jobs(db, successes.values())
     result = (states, configs, rows, latest, successes)
     db.info['routing.source_snapshot'] = result
     return result
@@ -230,10 +251,13 @@ def _option(db, provider_id, capability_id, name, families, choice):
         state = 'permission_missing'
     if source_switches and not any(source_switches):
         state = 'disabled'
+    elif ids and not auth_failure and all(configs[UUID(ident)].paused_reason for ident in ids):
+        state = 'paused'
     if valid and capability_id in {'stock_quote', 'index_quote'} and any(
             reason in {'snapshot_trade_date_unverified', 'quote_time_unknown'} for reason in failures):
         state = 'time_unverified'
-    if provider_id == 'tdx_data' and not any(configs[UUID(ident)].config.get('points_enabled') for ident in ids):
+    if provider_id == 'tdx_data' and state not in {'permission_missing', 'disabled', 'paused', 'time_unverified',
+            'error', 'failed', 'empty', 'unavailable', 'credentials_missing'} and not any(configs[UUID(ident)].config.get('points_enabled') for ident in ids):
         state = 'points_not_enabled'
     scope = '、'.join(dict.fromkeys(scope_items)) or ('按当前配置范围' if ids else '连接后沿用已有标的范围')
     if capability_id == 'full_minute':
@@ -244,7 +268,7 @@ def _option(db, provider_id, capability_id, name, families, choice):
     return dict(provider_id=provider_id, capability_id=capability_id, name=name,
         billing=kind, billing_label=BILL_LABELS[kind], billing_note=note, reference_url=reference, checked_at=CHECKED,
         entitlement=entitlement, implemented=declared, state=state, last_success_at=max(clocks) if clocks else None,
-        source_ids=ids, selected=choice.get('provider_id') == provider_id,
+        source_ids=ids, selected=provider_id in selected_providers(choice),
         reason='source_disabled' if source_switches and not any(source_switches) else auth_failure or (failures[0] if failures else None), scope=scope)
 
 
@@ -276,18 +300,22 @@ def matrix(db):
             not suppliers[item['provider_id']]['enabled'], item['entitlement'] != 'verified',
             item['provider_id']!='tushare',
             {'free': 0, 'free_quota': 1, 'subscription': 2, 'points': 3, 'unknown': 4}[item['billing']]))
-        unusable = AUTH_FAILURES | {'error', 'failed', 'unavailable', 'disabled', 'points_not_enabled', 'time_unverified'}
-        default = next((item['provider_id'] for item in preferred if item['entitlement'] == 'verified'
-            and item['state'] not in unusable and suppliers[item['provider_id']]['enabled']), None)
-        current = choice.get('provider_id') or default
-        effective = current if any(item['provider_id'] == current and item['entitlement'] == 'verified' and item['state'] not in unusable for item in options) else default
+        available = [item['provider_id'] for item in preferred if not route_blocker(item)
+                     and suppliers[item['provider_id']]['enabled']
+                     and (item['billing'] != 'points' or choice.get('allow_points') and item['provider_id'] in selected_providers(choice))]
+        # Gated collectors must be explicitly selected before they can supply the default route.
+        default = next((key for key in available if key not in NEW_TEMPLATES), None)
+        if default is None and 'fuyao' in available and backup_families(db, ident):
+            default = 'fuyao'
+        ordered = selected_providers(choice) or ([default] if default else [])
+        current = ordered[0] if ordered else None
+        effective = next((key for key in ordered if key in available), default)
         for option in options:
-            option['selected'] = option['provider_id'] == current
+            option['selected'] = option['provider_id'] in ordered
             suppliers[option['provider_id']]['capabilities'].append(option)
-        if current in suppliers:
-            suppliers[current]['serving_count'] += 1
+            suppliers[option['provider_id']]['serving_count'] += int(option['selected'])
         capabilities.append(dict(id=ident, name=name, group=group, description=description, routable=True,
-            current_provider_id=current, effective_provider_id=effective, options=options))
+            current_provider_id=current, fallback_provider_ids=ordered[1:], effective_provider_id=effective, options=options))
     from app.market.registry import SOURCES
     for key, (_, _, families, _) in definitions.items():
         for family in families:
@@ -323,14 +351,14 @@ def backup_families(db, capability_id):
 def preferred_families(db, capability_id, families, scope=None):
     settings = route_settings(db)
     choice = (settings.choices if settings else {}).get(capability_id, {})
-    selected = families_for(capability_id, choice.get('provider_id'))
+    selected = selected_families(capability_id, choice)
     backups = backup_families(db, capability_id)
     permitted = [family for family in families
         if (not family.startswith('fuyao_') or family in selected or family in backups)
         and (not family.startswith('tdx_') or (family in selected and choice.get('allow_points')))]
     rank = {'tushare': 0, 'fuyao': 1, 'tencent': 2, 'sina': 2, 'baostock': 2, 'tickflow': 3, 'ashare': 3, 'tdx_data': 4}
     return sorted(permitted, key=lambda family: (family not in selected,
-        100 if family in backups else rank.get(provider_for_family(family), 5), list(families).index(family)))
+        selected.index(family) if family in selected else 100 if family in backups else rank.get(provider_for_family(family), 5)))
 
 
 def collection_allowed(db, family):
@@ -342,7 +370,7 @@ def collection_allowed(db, family):
     settings = route_settings(db)
     choices = settings.choices if settings else {}
     related = [key for key in ROUTES if any(family in values for values in ROUTES[key][3].values())]
-    selected = [key for key in related if family in families_for(key, choices.get(key, {}).get('provider_id'))]
+    selected = [key for key in related if family in selected_families(key, choices.get(key, {}))]
     if family.startswith(('fuyao_', 'tdx_')):
         return (any(family in backup_families(db, key) for key in related)
             or bool(selected) and (not family.startswith('tdx_') or any(choices[key].get('allow_points') for key in selected)))
@@ -352,61 +380,152 @@ def collection_allowed(db, family):
     return True
 
 
-def apply_routes(db, owner, body, request_id=None):
+def _locked_routes(db, revision):
     lock(db, 'data-center:routes')
-    existing = db.get(DataRoutes, 1)
-    if body.expected_revision != (existing.revision if existing else 1):
+    existing = db.get(DataRoutes, 1, populate_existing=True)
+    if revision != (existing.revision if existing else 1):
         raise APIError(409, 'routing_changed', '来源选择已变化，请刷新后再应用。')
-    if len({item.capability_id for item in body.changes}) != len(body.changes):
-        raise APIError(422, 'duplicate_capability', '同一能力只能选择一个首选来源。')
-    snapshot = matrix(db)
+    return existing
+
+
+def _save_routes(db, owner, changes, existing, snapshot, request_id, *, activate_connections=True):
+    if len({item.capability_id for item in changes}) != len(changes):
+        raise APIError(422, 'duplicate_capability', '每个数据项请提交一组有序来源。')
     capabilities = {item['id']: item for item in snapshot['capabilities']}
     _, configs, providers, _, successes = _source_snapshot(db)
     choices = dict(existing.choices) if existing else {}
-    for item in body.changes:
+    for item in changes:
         capability = capabilities.get(item.capability_id)
-        option = next((option for option in capability['options'] if option['provider_id'] == item.provider_id), None) if capability else None
-        if not capability or not capability['routable'] or not option or not option['implemented']:
-            raise APIError(422, 'route_not_supported', '该来源尚不能替换所选能力。')
-        if option['billing'] == 'points' and not item.allow_points:
-            raise APIError(422, 'points_confirmation_required', '请明确启用该能力的积分消耗。')
-        if option['entitlement'] != 'verified':
-            raise APIError(409, 'capability_test_required', '请先检测这一项能力，非空返回通过后再应用。')
-        if option['state'] == 'disabled':
-            raise APIError(409, 'source_disabled', '该项采集配置已关闭，请先在详情的高级配置中启用。')
-        if option['state'] in {'error', 'failed', 'unavailable', 'credentials_missing', 'empty', 'time_unverified'}:
-            raise APIError(409, 'capability_test_required', '最近一次检测未通过，请重新检测该项能力后再应用。')
+        options = {opt['provider_id']: opt for opt in capability['options']} if capability and capability['routable'] else {}
+        ordered = [item.provider_id, *item.fallback_provider_ids]
+        if len(set(ordered)) != len(ordered):
+            raise APIError(422, 'duplicate_provider', '同一来源只能在此数据项中出现一次。')
+        previous = choices.get(item.capability_id, {})
+        saved = selected_providers(previous)
         checks = {}
-        for family in families_for(item.capability_id, item.provider_id):
-            source = providers.get(family)
-            if not source or source.id not in successes:
+        for key in ordered:
+            option = options.get(key)
+            if not option or not option['implemented']:
+                raise APIError(422, 'route_not_supported', '该来源尚未接入此数据项。')
+            if option['billing'] == 'points' and not item.allow_points:
+                raise APIError(422, 'points_confirmation_required', '请明确启用该能力的积分消耗。')
+            retained = key in saved and (key != item.provider_id or key == previous.get('provider_id'))
+            if retained:
+                checks.update({ident: previous['checks'][ident] for ident in option['source_ids'] if ident in previous.get('checks', {})})
                 continue
-            config = configs[source.id]
-            valid, connection = _current_source_success(db, source, config, successes[source.id],
-                choices.get(item.capability_id, {}))
-            if not valid or source.entitlement_status != 'verified' or any(
-                    source.rights.get(key) != 'allowed' for key in ('display', 'cache')):
-                continue
-            if family.startswith('tdx_'):
-                config.config = {**config.config, 'points_enabled': True}
-            checks[str(source.id)] = {'signature': _signature(config, connection), 'run_id': str(successes[source.id].id)}
-            if connection and not connection.enabled:
-                connection.enabled = True
-                # Enable only the source's already-tested connection on explicit
-                # apply; another capability's saved connection stays untouched.
-        choices[item.capability_id] = dict(provider_id=item.provider_id, allow_points=item.allow_points, checks=checks)
+            blocked = route_blocker(option)
+            if blocked == 'disabled':
+                raise APIError(409, 'source_disabled', '请先在高级采集配置中启用此端口。')
+            if blocked and not (blocked == 'points_not_enabled' and item.allow_points and option['entitlement'] == 'verified'):
+                raise APIError(409, 'capability_test_required', '此端口尚未通过检测，请在连接设置中检测该项能力。')
+            for family in families_for(item.capability_id, key):
+                provider = providers.get(family)
+                if not provider or str(provider.id) not in option['source_ids'] or provider.id not in successes:
+                    continue
+                source = provider.id
+                config = configs[source]
+                if provider.entitlement_status != 'verified' or any(provider.rights.get(right) != 'allowed' for right in ('display', 'cache')):
+                    continue
+                valid, connection = _current_source_success(db, provider, config, successes[source], previous)
+                if valid:
+                    if option['billing'] == 'points':
+                        config.config = {**config.config, 'points_enabled': True}
+                    checks[str(source)] = {'signature': _signature(config, connection), 'run_id': str(successes[source].id)}
+                    if activate_connections and connection and not connection.enabled:
+                        connection.enabled = True
+        choices[item.capability_id] = dict(provider_id=item.provider_id, fallback_provider_ids=item.fallback_provider_ids,
+            allow_points=any(options[key]['billing'] == 'points' for key in ordered) and item.allow_points, checks=checks)
     if existing is None:
         existing = DataRoutes(id=1, revision=1, choices={}, updated_at=now(db))
         db.add(existing)
     existing.choices, existing.revision, existing.updated_at = choices, existing.revision + 1, now(db)
     db.add(AuditEvent(actor_id=owner.id, action='data.routes.update', resource_type='data_routes', resource_id=None,
-        request_id=request_id, changed_field_names=[item.capability_id for item in body.changes]))
+        request_id=request_id, changed_field_names=[item.capability_id for item in changes]))
     db.flush()
     invalidate(db)
-    return matrix(db), 'complete', []
+    return matrix(db)
 
 
-def _seed_sources(db, owner, provider_id, families, allow_points):
+def apply_routes(db, owner, body, request_id=None):
+    existing = _locked_routes(db, body.expected_revision)
+    return _save_routes(db, owner, body.changes, existing, matrix(db), request_id), 'complete', []
+
+
+def configure_ports(db, owner, body, request_id=None):
+    from app.integrations.routing_schemas import RouteChange
+    existing = _locked_routes(db, body.expected_revision)
+    snapshot = matrix(db)
+    suppliers = {item['id']: item for item in snapshot['providers']}
+    if body.provider_id and body.provider_id not in suppliers:
+        raise APIError(404, 'provider_unknown', '数据来源不存在。')
+    changes, results = [], []
+    for cap in snapshot['capabilities']:
+        if body.capability_id and cap['id'] != body.capability_id:
+            continue
+        choice = (existing.choices if existing else {}).get(cap['id'], {})
+        saved = selected_providers(choice)
+        order = saved.copy()
+        if not order and cap['current_provider_id']:
+            order.append(cap['current_provider_id'])
+        added = False
+        # Keep the user's order. For a new route, prefer the existing default and purchased entitlement.
+        options = sorted(cap['options'], key=lambda opt: (opt['provider_id'] != cap['current_provider_id'],
+                         opt['provider_id'] != 'tushare', opt['billing'] not in {'free', 'free_quota'}))
+        for opt in options:
+            key = opt['provider_id']
+            if body.provider_id and key != body.provider_id:
+                continue
+            supplier = suppliers[key]
+            reason = route_blocker(opt)
+            if opt['implemented'] and supplier['credential_required'] and not supplier['credential_configured']:
+                reason = 'credentials_missing'
+            elif opt['billing'] == 'points' and reason in {None, 'disabled', 'not_checked', 'points_not_enabled'} and not (key in saved and choice.get('allow_points')):
+                reason = 'points_consent'
+            elif not reason and not supplier['enabled']:
+                reason = 'connection_paused'
+            if reason:
+                state = 'attention'
+            elif not cap['routable'] or key in saved:
+                state, reason = 'existing', 'already_configured'
+            else:
+                if key not in order:
+                    order.append(key)
+                added = True
+                state, reason = 'configured', 'route_saved'
+            results.append(dict(provider_id=key, capability_id=cap['id'], state=state, reason=reason))
+        if added:
+            changes.append(RouteChange(capability_id=cap['id'], provider_id=order[0], fallback_provider_ids=order[1:],
+                                       allow_points=choice.get('allow_points', False)))
+    if body.capability_id and not results:
+        raise APIError(404, 'capability_unknown', '所选范围内没有此端口。')
+    if changes:
+        snapshot = _save_routes(db, owner, changes, existing, snapshot, request_id, activate_connections=False)
+    # Previously an unchecked free port could never pass an automatic configuration:
+    # routing requires a receipt, while ordinary collection requires a route.
+    from app.integrations.coverage_routes import follow_route, permitted
+    from app.integrations.inspection_repair import eligible
+    from app.integrations.inspection_schemas import RepairReceipt
+    for result in results:
+        if result['provider_id'] != 'fuyao' or result['reason'] != 'not_checked':
+            continue
+        cap = next(c for c in snapshot['capabilities'] if c['id'] == result['capability_id'])
+        opt = next(o for o in cap['options'] if o['provider_id'] == 'fuyao')
+        if not cap['routable'] or opt['billing'] != 'free' or not permitted(opt, suppliers['fuyao']):
+            continue
+        try:
+            provider, config = eligible(db, UUID(opt['source_ids'][0]))
+        except APIError as exc:
+            result['reason'] = exc.code
+            continue
+        if not provider.enabled or config.paused_reason:
+            continue
+        action = RepairReceipt(id='port:'+cap['id'], title=cap['name'], area='capability', state='waiting', advice='')
+        follow_route(db, owner, cap, opt, provider, config, route_settings(db), now(db), action, probe=True, append=True)
+        result['reason'] = 'verification_queued'
+    return dict(matrix=snapshot, items=results), 'complete', []
+
+
+def _seed_sources(db, owner, provider_id, families):
     from app.market.registry import INDEXES, SOURCES
     from app.market.schemas import SourceConfiguration
     from app.market.service import configure_source, source_id
@@ -421,8 +540,6 @@ def _seed_sources(db, owner, provider_id, families, allow_points):
         identity = source_id(family)
         config = db.get(SourceSettings, identity)
         if config:
-            if family.startswith('tdx_') and allow_points and not config.config.get('points_enabled'):
-                config.config = {**config.config, 'points_enabled': True}
             continue
         if provider_id not in NEW_TEMPLATES:
             continue
@@ -434,7 +551,7 @@ def _seed_sources(db, owner, provider_id, families, allow_points):
             rights=dict(display='allowed', cache='allowed', export='denied', redistribute='denied'),
             entitlement_status='verified', enabled=True)
         if family.startswith('tdx_'):
-            values.update(points_enabled=allow_points, collection_mode='selected')
+            values.update(points_enabled=False, collection_mode='selected')
         configure_source(db, owner, SourceConfiguration.model_validate(values))
 
 
@@ -449,7 +566,22 @@ def connect_provider(db, owner, provider_id, body, request_id=None):
         raise APIError(404, 'provider_unknown', '数据供应商不存在。')
     lock(db, 'data-center:connect:' + provider_id)
     name, kind, families, endpoint = definition
-    _seed_sources(db, owner, provider_id, families, body.allow_points)
+    if body.allow_points:
+        if provider_id != 'tdx_data' or body.points_source_id not in {source_id(f) for f in families}:
+            raise APIError(422, 'points_source_required', '请指定允许消耗积分的单个端口。')
+        config = db.get(SourceSettings, body.points_source_id)
+        if config is None:
+            raise APIError(422, 'source_scope_required', '请先登记此端口的采集范围。')
+        config.config = {**config.config, 'points_enabled': True}
+        if not body.api_key and any(str(config.source_id) in row.source_ids for row in db.scalars(
+                select(Connection).where(Connection.template == provider_id, Connection.archived.is_(False)))):
+            db.add(AuditEvent(actor_id=owner.id, action='data.points.authorize', resource_type='provider',
+                              resource_id=config.source_id, request_id=request_id, changed_field_names=['points_enabled']))
+            db.flush()
+            invalidate(db)
+            return matrix(db), 'complete', []
+    else:
+        _seed_sources(db, owner, provider_id, families)
     invalidate(db)
     rows = list(db.scalars(select(Connection).where(Connection.template == provider_id, Connection.archived.is_(False))))
     if len(rows) > 1:

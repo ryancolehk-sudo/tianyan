@@ -18,6 +18,7 @@ export type Capability = {
   data_time?: string | null; enabled: boolean; interval_seconds: number; collection_enabled?: boolean;
 };
 export type ConnectionTest = {
+  source_id?: string | null; job_id?: string | null; message?: string | null;
   status: 'success' | 'error' | 'unknown' | 'queued' | 'running'; at: string | null; revision: number | null;
   error_code?: string | null; elapsed_ms?: number | null; preview?: string | null;
 };
@@ -63,6 +64,14 @@ export type CallRecord = {
 };
 export type CallFilters = { kind?: 'ai' | 'data'; connection_id?: string; errors_only?: boolean; from_date?: string; to_date?: string; cursor?: string };
 export type CallIndex = { items: CallRecord[]; next_cursor: string | null };
+export type InspectionState = 'available' | 'working' | 'waiting' | 'manual' | 'limited' | 'verified';
+export type InspectionFinding = {
+  id: string; title: string; area: 'source' | 'history' | 'capability' | 'runtime' | 'cache' | 'call' | 'route';
+  state: InspectionState; advice: string; count: number; source_id: string | null;
+  connection_id: string | null; reason: string | null; retry_at: string | null; job_id: string | null; trade_day?: string | null;
+};
+export type RepairBatch = { started_at: string; actions: InspectionFinding[] };
+export type SystemInspection = { checked_at: string; checks: Record<string, number>; findings: InspectionFinding[]; last_repair: RepairBatch | null };
 export type EvidenceRef = { id: string; title: string; url?: string | null; source_name?: string | null; source_time?: string | null };
 export type RunView = {
   id: string; job_id: string | null; feature: FeatureId; state: string; stage: string | null;
@@ -94,6 +103,8 @@ export const dataCenterApi = {
   saveSettings: (body: { enabled?: boolean; default_connection_id?: string | null; expected_revision?: number }, csrf: string) => mutate<AiSettings>('/api/v1/ai/settings', body, csrf, 'PATCH'),
   saveBinding: (feature: FeatureId, body: Pick<FeatureBinding, 'enabled' | 'connection_id' | 'fallback_connection_id'>, csrf: string) => mutate<AiSettings>('/api/v1/ai/bindings/' + feature, body, csrf, 'PATCH'),
   overview: () => request<Envelope<Overview>>('/api/v1/data-center/overview'),
+  inspection: () => request<Envelope<SystemInspection>>('/api/v1/data-center/inspection'),
+  repair: (csrf: string, key: string) => mutate<RepairBatch>('/api/v1/data-center/inspection/repair', {}, csrf, 'POST', key),
   calls: (filters: CallFilters) => request<Envelope<CallIndex>>('/api/v1/data-center/calls' + query(filters)),
   createRun: (body: AiRunInput, csrf: string, key?: string) => mutate<RunView>('/api/v1/ai/runs', body, csrf, 'POST', key),
   runs: (filters: RunQuery) => request<Envelope<{ items: RunView[]; next_cursor: string | null }>>('/api/v1/ai/runs' + query(filters)),

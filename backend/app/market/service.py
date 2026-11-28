@@ -602,101 +602,7 @@ def schedule_sources(*, families=None):
         for config in due:
             try:
                 provider = db.get(Provider, config.source_id)
-                if provider.family=='tencent_web' and config.config.get('collection_mode')=='focused':
-                    from app.market.quote_focus import focused_selection
-                    if not focused_selection(db,config,clock):
-                        config.next_run_at=next_collection(provider.family,clock,config.interval_seconds)
-                        continue
-                from app.market.budget import family_cooldown_until
-                cooldown = family_cooldown_until(db, provider.family, clock)
-                if cooldown is not None:
-                    # Restore the supplier wait before checking calendars or
-                    # routes: a local five-second recheck cannot shorten it.
-                    config.next_run_at = max(config.next_run_at, cooldown)
-                    continue
-                from app.integrations.routing import collection_allowed
-                if provider.family=='tdx_full_minute' or not collection_allowed(db,provider.family):
-                    config.next_run_at=clock+timedelta(seconds=max(300,config.interval_seconds))
-                    continue
-                if provider.family in TDX_FAMILIES and config.config.get('points_enabled') is not True:
-                    config.next_run_at=clock+timedelta(seconds=max(300,config.interval_seconds))
-                    continue
-                from app.market.reference_schedule import FAMILIES as STATIC_REFERENCES, deferred_reference
-                deadline = deferred_reference(provider.family, clock)
-                from app.market.bulk_quote_queue import deferred_background
-                deadline = deadline or deferred_background(db,provider.family,clock)
-                if deadline is not None:
-                    config.next_run_at = max(config.next_run_at, deadline)
-                    continue
-                bound = resolve_source_credentials(db, provider.id, provider.family, refresh=True)
-                if bound.reason:
-                    raise APIError(422, 'source_disabled' if bound.reason == 'source_disabled' else 'credentials_missing', '数据接入尚不可采集。')
-                from app.market.realtime_schedule import FAMILIES as REALTIME, deferred_realtime
-                if provider.family in REALTIME:
-                    deadline = deferred_realtime(db, provider.family, clock, config.interval_seconds)
-                    if deadline is not None:
-                        config.next_run_at = max(config.next_run_at, deadline)
-                        continue
-                if provider.family in MINUTE_FAMILIES:
-                    deadline = deferred_minute(db, provider.family, clock, config.interval_seconds, config.config.get('symbols', []))
-                    if deadline is not None:
-                        config.next_run_at = max(config.next_run_at, deadline)
-                        continue
-                from app.market.publication_schedule import WINDOWS as PUBLICATION_WINDOWS, deferred_publication
-                if provider.family in PUBLICATION_WINDOWS:
-                    deadline=deferred_publication(db,provider.family,clock,config.interval_seconds)
-                    if deadline is not None:
-                        config.next_run_at=max(config.next_run_at,deadline)
-                        continue
-                from app.market.intraday_schedule import FAMILIES as LIVE, deferred_intraday
-                if provider.family in EASTMONEY_FAMILIES | (DIRECTION_FAMILIES - {'direction_ths_hot', 'direction_tdx_hot', 'direction_em_hot'}):
-                    deadline=deferred_intraday(db,clock,config.interval_seconds,[],batch=True)
-                    if deadline is not None:
-                        config.next_run_at=max(config.next_run_at,deadline)
-                        continue
-                if provider.family in LIVE:
-                    deadline = deferred_intraday(db, clock, config.interval_seconds, config.config.get('symbols', []), batch=provider.family in {'tushare_market_rt','tushare_rt_indices'})
-                    if deadline is not None:
-                        config.next_run_at = max(config.next_run_at, deadline)
-                        continue
-                if schema_recheck(provider.family, config.paused_reason):
-                    # Keep the pause visible until an entire response validates.
-                    # Persist the next probe before dispatch; restart cannot loop.
-                    if permission_reason(provider):
-                        config.next_run_at = next_collection(provider.family, clock, config.interval_seconds, schema_probe=True)
-                        continue
-                    if provider.family == BREADTH:
-                        from app.market.breadth_recovery import allowed
-                        if not allowed(db, clock):
-                            config.next_run_at = next_collection(provider.family, clock, config.interval_seconds, schema_probe=True)
-                            continue
-                    if provider.family in DIRECTION_RECOVERY | FAST_DIRECTION_RECOVERY:
-                        deadline = _direction_probe_deadline(db, provider, config, clock)
-                        if deadline is not None:
-                            config.next_run_at = max(config.next_run_at, deadline)
-                            continue
-                    lock(db, f'source:queue:{config.source_id}')
-                    pending = db.scalar(select(Job.id).where(Job.kind == 'source.collect',
-                        Job.payload['source_id'].astext == str(config.source_id), Job.state.in_(['queued', 'running'])).limit(1))
-                    if not pending:
-                        payload = {'source_id': str(config.source_id), 'schema_probe': True}
-                        binding_context = job_context(bound, config.source_id)
-                        if binding_context is not None:
-                            payload['integration_context'] = binding_context
-                        db.add(Job(owner_id=config.owner_id, kind='source.collect',
-                            payload=payload, available_at=min(clock, config.next_run_at)))
-                    from app.market.kpl_order_recovery import latest_diagnostic
-                    config.next_run_at = next_collection(provider.family, clock, config.interval_seconds, schema_probe=True,
-                        probe_diagnostic=latest_diagnostic(db,provider,clock))
-                else:
-                    # Mark only newly created automatic tasks. Returning an
-                    # existing explicit task must not silently relabel it.
-                    enqueue_collection(db, config.source_id, scheduled_intraday=provider.family in LIVE,
-                        scheduled_publication=provider.family in PUBLICATION_WINDOWS,
-                        scheduled_minute=provider.family in MINUTE_FAMILIES,
-                        scheduled_eastmoney=provider.family in EASTMONEY_FAMILIES,
-                        scheduled_realtime=provider.family in REALTIME,
-                        scheduled_reference=provider.family in STATIC_REFERENCES | {'baostock_daily','baostock_history','baostock_fundamental','baostock_classification'})
+                dispatch_scheduled(db, provider, config, clock)
             except APIError as error:
                 if error.code == 'collection_intent_conflict':
                     # A manual date-bound job is already pending. Do not roll
@@ -711,3 +617,105 @@ def schedule_sources(*, families=None):
                 if db.get(Provider, config.source_id).family in MINUTE_FAMILIES:
                     cooldown = sina_cooldown_until(db, current)
                 config.next_run_at = max(current + timedelta(seconds=config.interval_seconds), cooldown or current)
+
+
+def background_window(db, family, clock):
+    from app.market.bulk_quote_queue import deferred_background
+    from app.market.reference_schedule import deferred_reference
+    return deferred_reference(family, clock) or deferred_background(db, family, clock)
+
+
+def collection_window(db, provider, config, clock):
+    """Read the same calendar and publication gates for scheduling and repair previews."""
+    from app.market.intraday_schedule import FAMILIES as LIVE, deferred_intraday
+    from app.market.publication_schedule import WINDOWS as PUBLICATION_WINDOWS, deferred_publication
+    from app.market.realtime_schedule import FAMILIES as REALTIME, deferred_realtime
+
+    family = provider.family
+    deadline = deferred_realtime(db, family, clock, config.interval_seconds) if family in REALTIME else None
+    if not deadline and family in MINUTE_FAMILIES:
+        deadline = deferred_minute(db, family, clock, config.interval_seconds, config.config.get('symbols', []))
+    if not deadline and family in PUBLICATION_WINDOWS:
+        deadline = deferred_publication(db, family, clock, config.interval_seconds)
+    if not deadline and family in EASTMONEY_FAMILIES | (DIRECTION_FAMILIES - {'direction_ths_hot', 'direction_tdx_hot', 'direction_em_hot'}):
+        deadline = deferred_intraday(db, clock, config.interval_seconds, [], batch=True)
+    if not deadline and family in LIVE:
+        deadline = deferred_intraday(db, clock, config.interval_seconds, config.config.get('symbols', []),
+            batch=family in {'tushare_market_rt', 'tushare_rt_indices'})
+    return deadline
+
+
+def dispatch_scheduled(db, provider, config, clock):
+    """Dispatch one configured collection through its ordinary schedule and supplier gates."""
+    if provider.family=='tencent_web' and config.config.get('collection_mode')=='focused':
+        from app.market.quote_focus import focused_selection
+        if not focused_selection(db,config,clock):
+            config.next_run_at=next_collection(provider.family,clock,config.interval_seconds)
+            return None
+    from app.market.budget import family_cooldown_until
+    cooldown = family_cooldown_until(db, provider.family, clock)
+    if cooldown is not None:
+        # Restore the supplier wait before checking calendars or
+        # routes: a local five-second recheck cannot shorten it.
+        config.next_run_at = max(config.next_run_at, cooldown)
+        return None
+    from app.integrations.routing import collection_allowed
+    if provider.family=='tdx_full_minute' or not collection_allowed(db,provider.family):
+        config.next_run_at=clock+timedelta(seconds=max(300,config.interval_seconds))
+        return None
+    if provider.family in TDX_FAMILIES and config.config.get('points_enabled') is not True:
+        config.next_run_at=clock+timedelta(seconds=max(300,config.interval_seconds))
+        return None
+    from app.market.reference_schedule import FAMILIES as STATIC_REFERENCES
+    from app.market.intraday_schedule import FAMILIES as LIVE
+    from app.market.publication_schedule import WINDOWS as PUBLICATION_WINDOWS
+    from app.market.realtime_schedule import FAMILIES as REALTIME
+    deadline = background_window(db, provider.family, clock)
+    if deadline is not None:
+        config.next_run_at = max(config.next_run_at, deadline)
+        return None
+    bound = resolve_source_credentials(db, provider.id, provider.family, refresh=True)
+    if bound.reason:
+        raise APIError(422, 'source_disabled' if bound.reason == 'source_disabled' else 'credentials_missing', '数据接入尚不可采集。')
+    deadline = collection_window(db, provider, config, clock)
+    if deadline is not None:
+        config.next_run_at = max(config.next_run_at, deadline)
+        return None
+    if schema_recheck(provider.family, config.paused_reason):
+        # Keep the pause visible until an entire response validates.
+        # Persist the next probe before dispatch; restart cannot loop.
+        if permission_reason(provider):
+            config.next_run_at = next_collection(provider.family, clock, config.interval_seconds, schema_probe=True)
+            return None
+        if provider.family == BREADTH:
+            from app.market.breadth_recovery import allowed
+            if not allowed(db, clock):
+                config.next_run_at = next_collection(provider.family, clock, config.interval_seconds, schema_probe=True)
+                return None
+        if provider.family in DIRECTION_RECOVERY | FAST_DIRECTION_RECOVERY:
+            deadline = _direction_probe_deadline(db, provider, config, clock)
+            if deadline is not None:
+                config.next_run_at = max(config.next_run_at, deadline)
+                return None
+        lock(db, f'source:queue:{config.source_id}')
+        pending = db.scalar(select(Job.id).where(Job.kind == 'source.collect',
+            Job.payload['source_id'].astext == str(config.source_id), Job.state.in_(['queued', 'running'])).limit(1))
+        if not pending:
+            payload = {'source_id': str(config.source_id), 'schema_probe': True}
+            binding_context = job_context(bound, config.source_id)
+            if binding_context is not None:
+                payload['integration_context'] = binding_context
+            db.add(Job(owner_id=config.owner_id, kind='source.collect',
+                payload=payload, available_at=min(clock, config.next_run_at)))
+        from app.market.kpl_order_recovery import latest_diagnostic
+        config.next_run_at = next_collection(provider.family, clock, config.interval_seconds, schema_probe=True,
+            probe_diagnostic=latest_diagnostic(db,provider,clock))
+    else:
+        # Mark only newly created automatic tasks. Returning an
+        # existing explicit task must not silently relabel it.
+        return enqueue_collection(db, config.source_id, scheduled_intraday=provider.family in LIVE,
+            scheduled_publication=provider.family in PUBLICATION_WINDOWS,
+            scheduled_minute=provider.family in MINUTE_FAMILIES,
+            scheduled_eastmoney=provider.family in EASTMONEY_FAMILIES,
+            scheduled_realtime=provider.family in REALTIME,
+            scheduled_reference=provider.family in STATIC_REFERENCES | {'baostock_daily','baostock_history','baostock_fundamental','baostock_classification'})

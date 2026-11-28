@@ -250,3 +250,23 @@ def review_save_notes(body: ReviewNotesInput, request: Request, identity=Depends
     require_role(identity[0], 'admin', 'researcher')
     return write_once(request, identity[0], key, body,
                       lambda db: save_notes(db, identity[0], body, request.state.request_id))
+
+
+@router.get('/api/v1/review-data/seat-labels', response_model=Envelope[dict], responses=ERRORS,
+            operation_id='getReviewSeatLabelSources')
+def review_seat_label_sources(request: Request, trade_day: date, codes: str=Query('', max_length=223, pattern=r'^(?:\d{6}(?:,\d{6}){0,31})?$'), identity=Depends(principal),
+                              db: Session=Depends(db_session)):
+    from app.config import settings
+    from app.market.protocol import SHANGHAI
+    from app.market.review_store import permitted_provider
+    from app.market.review_seat_labels import review_seat_labels
+    clock = now(db).astimezone(SHANGHAI)
+    if trade_day > clock.date():
+        raise APIError(422, 'invalid_trade_day', '交易日不能晚于服务器当前日期。')
+    config = settings()
+    if (config.deployment_mode != 'local' or config.app_mode != 'real'
+            or not config.data_collection_enabled or not config.seat_label_lookup_enabled
+            or not codes or not permitted_provider(db, 'tushare_top_inst')
+            or not permitted_provider(db, 'tushare_top_list')):
+        return envelope(request, dict(day=trade_day.isoformat(), rows=[], kpl_status='unavailable'), 'unavailable')
+    return envelope(request, review_seat_labels(trade_day, tuple(sorted(set(codes.split(',')) - {''}))), 'partial')

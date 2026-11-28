@@ -141,11 +141,16 @@ def overview(db, owner):
             status = 'disabled' if not view['enabled'] else _data_state(caps)
             successful = _max_time(entry.get('last_success_at') for entry in caps)
             latest_data = _latest_data(entry.get('data_time') for entry in caps)
-            ids = [UUID(str(value)) for value in view.get('source_ids', [])]
-            latest = db.scalar(select(DataFetchRun).where(DataFetchRun.source_id.in_(ids)).order_by(
-                DataFetchRun.started_at.desc(), DataFetchRun.id.desc()).limit(1)) if ids else None
-            attempt_at = latest.started_at if latest else None
-            error = latest.reason if latest and latest.status not in SUCCESS else None
+            attempts = [cap['last_attempt'] for cap in caps if cap.get('enabled') and cap.get('last_attempt')]
+            attempt_at = _max_time(run['started_at'] for run in attempts)
+            # Use current live capability heads. A historical date or an intentionally
+            # disabled child must not replace the service's current error.
+            problem = max((cap for cap in caps if cap.get('enabled') and cap.get('last_attempt')
+                           and cap['state'] not in {'ready', 'waiting', 'waiting_focus', 'disabled', 'empty'}
+                           and cap['last_attempt'].get('reason')),
+                          key=lambda cap: _timestamp(cap['last_attempt']['received_at']), default=None)
+            latest = SimpleNamespace(retry_not_before=_timestamp(problem.get('cooldown_until'))) if problem else None
+            error = problem['last_attempt']['reason'] if problem else None
             modules = ['资讯中心'] if view['kind'] == 'news' else ['工作台', '每日复盘']
         services.append(ServiceStatus(id=ident, name=view['name'], kind=view['kind'], status=status,
                                       latest_data_at=latest_data, last_success_at=successful,

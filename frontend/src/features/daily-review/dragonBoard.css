@@ -1,0 +1,30 @@
+.lh-board {--lh-line:var(--color-border-primary);--lh-muted:var(--color-text-secondary);--lh-gold:var(--color-accent-600);background:var(--color-background-primary-default);color:var(--color-text-primary);border:1px solid var(--lh-line);border-radius:5px;min-width:0;font-variant-numeric:tabular-nums}
+.lh-head,.lh-tools,.lh-head>div,.lh-panel-heading,.lh-tabs {display:flex;align-items:center;gap:8px}
+.lh-head,.lh-tools,.lh-panel-heading {padding:8px 12px;border-bottom:1px solid var(--lh-line)}
+.lh-head,.lh-panel-heading {justify-content:space-between;background:var(--color-background-primary-default)}
+.lh-board h2,.lh-board h3 {margin:0}.lh-head h2 {font-size:21px}.lh-head>b {font-size:13px;color:var(--lh-gold)}
+.lh-board small,.lh-board footer {font-size:12px;color:var(--lh-muted)}.lh-panel-heading h3 {font-size:15px}.lh-panel-heading h3 small {font-weight:400;margin-left:6px}
+.lh-tabs {gap:3px;flex-wrap:wrap}.lh-tabs button[aria-pressed=true] {color:var(--color-accent-600);background:var(--color-accent-50);border-color:var(--color-accent-200)}
+.lh-tools {flex-wrap:wrap}.lh-tools input {margin-left:auto;width:clamp(150px,18vw,310px)}.lh-tools select {max-width:150px}
+.lh-frame {height:var(--lh-height,48vh);display:grid;grid-template-columns:minmax(0,2.8fr) minmax(260px,1fr)}
+.lh-matrix,.lh-ranking {display:flex;flex-direction:column;min-height:0;min-width:0}.lh-ranking {border-left:1px solid var(--lh-line)}
+.lh-panel-heading {height:43px;box-sizing:border-box;flex:none}.lh-panel-heading button,.lh-panel-heading select {font-size:12px;min-height:25px;padding:3px 7px}
+.lh-scroll {overflow:auto;min-height:0;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--color-border-primary) transparent}
+.lh-frame table {width:100%;border-collapse:separate;border-spacing:0;font-size:13px}.lh-frame td,.lh-frame th {text-align:left;line-height:1.5;padding:7px 9px;border-bottom:1px solid var(--lh-line);overflow-wrap:anywhere}
+.lh-frame thead th {position:sticky;top:0;background:var(--color-background-secondary-default);font-size:12px;z-index:1}
+.lh-actors {table-layout:fixed}.lh-actors th:first-child {width:15%}.lh-actors th:nth-child(2){width:20%}.lh-actors tbody th small {display:block;font-weight:400}.lh-actors td:nth-child(2){font-size:12px;color:var(--color-text-secondary)}.lh-actors tr:nth-child(even) {background:var(--color-background-secondary-default)}
+.lh-board .lh-chip {display:inline-flex;align-items:baseline;gap:5px;flex-wrap:wrap;max-width:100%;min-height:24px;padding:2px 5px;margin:2px;border:1px solid var(--color-border-primary);background:var(--color-background-secondary-default);font-size:13px;text-align:left}
+.lh-buy .lh-chip span,.lh-board .rise {color:var(--board-market-up)}.lh-sell .lh-chip span,.lh-board .fall {color:var(--board-market-down)}
+.lh-chip i {color:var(--color-accent-600);font-size:10px;font-style:normal}.lh-board button.lh-link {color:inherit;background:transparent;border:0;padding:0;text-align:left;min-height:24px;font-weight:600}.lh-ranking th,.lh-ranking td {padding:7px 8px}
+.lh-board footer {border-top:1px solid var(--lh-line);padding:5px 12px}
+.dr-dialog:has(.lh-detail) {width:min(1080px,94vw)}.lh-detail>.lh-tabs {margin-bottom:14px}.lh-detail>.dr-icon {float:right}
+.lh-mobile {display:none}
+@media(max-width:850px){.lh-frame {display:block}.lh-ranking,.lh-frame.show-institutions .lh-matrix{display:none}.lh-frame.show-institutions .lh-ranking{display:flex}.lh-matrix,.lh-ranking {height:100%}.lh-mobile {display:flex;padding:4px 8px}.lh-tools input {margin-left:0;flex:1}.lh-tools>.lh-tabs {width:100%}.lh-actors th:nth-child(2),.lh-actors td:nth-child(2){display:none}.lh-actors th:first-child{width:21%}.lh-frame td,.lh-frame th{padding:5px}.lh-board .lh-chip{font-size:12px;gap:2px}.lh-tabs button{padding:4px 7px}}
+
+.lh-board .lh-actors tbody th {background:var(--color-background-secondary-default);color:var(--color-text-primary);font-weight:600;font-size:14px;border-right:1px solid var(--lh-line)}
+.lh-board .lh-actors tbody th .gold {color:var(--color-accent-600)}.lh-actors tbody th small {margin-top:2px}
+
+.lh-chip-list {display:flex;flex-wrap:wrap;align-items:center;gap:4px;white-space:normal}
+.lh-board .lh-chip-list .lh-chip {margin:0;min-width:0}
+
+.lh-board .lh-pending-tag {color:var(--color-accent-600)}
