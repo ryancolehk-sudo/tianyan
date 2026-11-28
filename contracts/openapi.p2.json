@@ -19342,6 +19342,480 @@
           }
         }
       }
+    },
+    "/api/v1/market-status": {
+      "get": {
+        "summary": "Market Status",
+        "operationId": "getMarketStatus",
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trade_day",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Trade Day"
+            }
+          },
+          {
+            "name": "window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "1",
+                "20"
+              ],
+              "type": "string",
+              "default": "1",
+              "title": "Window"
+            }
+          },
+          {
+            "name": "sample_at",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sample At"
+            }
+          },
+          {
+            "name": "as_of_time",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of Time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_dict_"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        }
+      }
+    },
+    "/api/v1/market-radar/minute": {
+      "get": {
+        "summary": "Market Radar",
+        "operationId": "getMarketRadarMinute",
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sample_at",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Sample At"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_dict_"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        }
+      }
+    },
+    "/api/v1/news/overview": {
+      "get": {
+        "summary": "Overview",
+        "operationId": "newsOverview",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_NewsOverview_"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/news/topic-stream": {
+      "get": {
+        "summary": "Topic Stream",
+        "operationId": "getTopicStream",
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 768
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 40,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "importance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "important",
+                    "watch",
+                    "regular"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Importance"
+            }
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "order",
+                    "supply",
+                    "catalyst"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Type"
+            }
+          },
+          {
+            "name": "layout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "timeline",
+                "frontpage",
+                "hot"
+              ],
+              "type": "string",
+              "default": "timeline",
+              "title": "Layout"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TopicStream_"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/news/topic-picks": {
+      "get": {
+        "summary": "Topic Picks",
+        "operationId": "getTopicPicks",
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Day"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_TopicPicks_"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -29088,6 +29562,39 @@
             "type": "array",
             "maxItems": 20,
             "title": "Securities"
+          },
+          "industry_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 150,
+            "title": "Industry Codes"
+          },
+          "board_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 150,
+            "title": "Board Codes"
+          },
+          "publisher_highlight": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "level:A",
+                  "level:B",
+                  "titleColor:2",
+                  "titleColor:3"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publisher Highlight"
           },
           "secCode": {
             "anyOf": [
@@ -41389,6 +41896,1081 @@
           "connection_revision"
         ],
         "title": "PlanApiReview"
+      },
+      "Envelope_TopicStream_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TopicStream"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[TopicStream]"
+      },
+      "Envelope_NewsOverview_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/NewsOverview"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[NewsOverview]"
+      },
+      "Envelope_TopicPicks_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TopicPicks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "Envelope[TopicPicks]"
+      },
+      "NewsOverview": {
+        "properties": {
+          "hotspots": {
+            "items": {
+              "$ref": "#/components/schemas/HotHeadline"
+            },
+            "type": "array",
+            "title": "Hotspots"
+          },
+          "industries": {
+            "items": {
+              "$ref": "#/components/schemas/IndustryHeadline"
+            },
+            "type": "array",
+            "title": "Industries"
+          },
+          "market_trade_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Trade Day"
+          },
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/IndustryHeadline"
+            },
+            "type": "array",
+            "title": "Concepts"
+          },
+          "strength_topics": {
+            "items": {
+              "$ref": "#/components/schemas/IndustryHeadline"
+            },
+            "type": "array",
+            "title": "Strength Topics"
+          },
+          "concept_trade_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Trade Day"
+          },
+          "strength_trade_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strength Trade Day"
+          },
+          "breadth_trade_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breadth Trade Day"
+          },
+          "breadth_basis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "daily_close",
+                  "intraday"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breadth Basis"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/TopicSourceState"
+            },
+            "type": "array",
+            "title": "Sources"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "hotspots",
+          "industries"
+        ],
+        "title": "NewsOverview"
+      },
+      "HotHeadline": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "published_at",
+          "sources"
+        ],
+        "title": "HotHeadline"
+      },
+      "TopicStream": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StreamHeadline"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "featured": {
+            "items": {
+              "$ref": "#/components/schemas/StreamHeadline"
+            },
+            "type": "array",
+            "title": "Featured"
+          },
+          "hot_events": {
+            "items": {
+              "$ref": "#/components/schemas/HotEvent"
+            },
+            "type": "array",
+            "title": "Hot Events"
+          },
+          "ranked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ranked At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "TopicStream"
+      },
+      "IndustryHeadline": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefHeadline"
+              },
+              {
+                "$ref": "#/components/schemas/ArchivedHeadline"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest"
+          },
+          "market": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IndustryMarketQuote"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "strength": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strength"
+          },
+          "strength_coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TopicBreadthCoverage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "latest"
+        ],
+        "title": "IndustryHeadline"
+      },
+      "StreamHeadline": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "published_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Day"
+          },
+          "received_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received At"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          },
+          "importance": {
+            "type": "string",
+            "enum": [
+              "important",
+              "watch",
+              "regular"
+            ],
+            "title": "Importance"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "order",
+                  "supply",
+                  "catalyst"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "publisher_highlighted": {
+            "type": "boolean",
+            "title": "Publisher Highlighted"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/BriefHeadline"
+            },
+            "type": "array",
+            "title": "Reports"
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excerpt"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "published_at",
+          "source_name",
+          "importance",
+          "event_type",
+          "reason",
+          "publisher_highlighted"
+        ],
+        "title": "StreamHeadline"
+      },
+      "ArchivedHeadline": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "published_at",
+          "source_url",
+          "source_name"
+        ],
+        "title": "ArchivedHeadline"
+      },
+      "BriefHeadline": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "published_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Day"
+          },
+          "received_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received At"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "published_at",
+          "source_name"
+        ],
+        "title": "BriefHeadline"
+      },
+      "TopicPicks": {
+        "properties": {
+          "edition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PickEdition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "days": {
+            "items": {
+              "type": "string",
+              "format": "date"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FinancePick"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "edition",
+          "days",
+          "items"
+        ],
+        "title": "TopicPicks"
+      },
+      "TopicSourceState": {
+        "properties": {
+          "family": {
+            "type": "string",
+            "title": "Family"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "interval_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Seconds"
+          },
+          "received_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "family",
+          "name",
+          "status",
+          "interval_seconds",
+          "received_at"
+        ],
+        "title": "TopicSourceState"
+      },
+      "HotEvent": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "published_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Day"
+          },
+          "received_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received At"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          },
+          "importance": {
+            "type": "string",
+            "enum": [
+              "important",
+              "watch",
+              "regular"
+            ],
+            "title": "Importance"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "order",
+                  "supply",
+                  "catalyst"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "publisher_highlighted": {
+            "type": "boolean",
+            "title": "Publisher Highlighted"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/BriefHeadline"
+            },
+            "type": "array",
+            "title": "Reports"
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excerpt"
+          },
+          "heat": {
+            "type": "number",
+            "title": "Heat"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "history": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "History"
+          },
+          "trend": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "flat",
+              "new",
+              "unknown"
+            ],
+            "title": "Trend"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Pct"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "published_at",
+          "source_name",
+          "importance",
+          "event_type",
+          "reason",
+          "publisher_highlighted",
+          "heat",
+          "sources",
+          "history",
+          "trend",
+          "change_pct"
+        ],
+        "title": "HotEvent"
+      },
+      "IndustryMarketQuote": {
+        "properties": {
+          "pct_change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct Change"
+          },
+          "main_net_cny": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Main Net Cny"
+          },
+          "source_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Time"
+          },
+          "received_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "pct_change",
+          "main_net_cny",
+          "source_time"
+        ],
+        "title": "IndustryMarketQuote"
+      },
+      "TopicBreadthCoverage": {
+        "properties": {
+          "quoted": {
+            "type": "integer",
+            "title": "Quoted"
+          },
+          "members": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Members"
+          },
+          "members_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Members Day"
+          },
+          "partial": {
+            "type": "boolean",
+            "title": "Partial"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "quoted",
+          "members",
+          "members_day",
+          "partial"
+        ],
+        "title": "TopicBreadthCoverage"
+      },
+      "FinancePick": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "published_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Day"
+          },
+          "received_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received At"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "产业催化",
+              "订单与中标",
+              "供应变化",
+              "宏观政策",
+              "公司动态",
+              "市场与资金"
+            ],
+            "title": "Category"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "scores": {
+            "$ref": "#/components/schemas/PickScores"
+          },
+          "is_read": {
+            "type": "boolean",
+            "title": "Is Read"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/BriefHeadline"
+            },
+            "type": "array",
+            "title": "Reports"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "published_at",
+          "source_name",
+          "category",
+          "summary",
+          "reason",
+          "score",
+          "scores",
+          "is_read",
+          "reports"
+        ],
+        "title": "FinancePick"
+      },
+      "PickEdition": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "cutoff": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Cutoff"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "rubric": {
+            "type": "string",
+            "title": "Rubric"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "day",
+          "cutoff",
+          "published_at",
+          "model",
+          "rubric"
+        ],
+        "title": "PickEdition"
+      },
+      "PickScores": {
+        "properties": {
+          "impact": {
+            "type": "integer",
+            "maximum": 35.0,
+            "minimum": 0.0,
+            "title": "Impact"
+          },
+          "evidence": {
+            "type": "integer",
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Evidence"
+          },
+          "novelty": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Novelty"
+          },
+          "timeliness": {
+            "type": "integer",
+            "maximum": 15.0,
+            "minimum": 0.0,
+            "title": "Timeliness"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "impact",
+          "evidence",
+          "novelty",
+          "timeliness"
+        ],
+        "title": "PickScores"
       }
     },
     "securitySchemes": {

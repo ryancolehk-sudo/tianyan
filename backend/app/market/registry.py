@@ -1,7 +1,7 @@
 """Implemented source identities only. A catalogue candidate is never auto-enabled."""
 from dataclasses import dataclass
 from app.market.cadence_policy import FAST_FLOORS
-from app.market.news_feeds import NEWS_FEEDS
+from app.market.news_feeds import FLASH_FAMILIES, FLASH_INTERVAL, NEWS_FEEDS
 from app.market.minute import FAMILY_INTERVALS, MINIMUM_INTERVALS, SOURCE_VERSION, SOURCE_REFERENCE, SOURCE_DOCUMENTATION
 from app.market.tushare_specs import API_DOCS as TUSHARE_API_DOCS, DOCS as TUSHARE_DOCS, SPECS as TUSHARE_SPECS
 from app.market.connected_specs import FUYAO_SPECS, TDX_SPECS, FUYAO_DOCS, TDX_DOCS
@@ -125,7 +125,9 @@ for _family, _interval in FAMILY_INTERVALS.items():
         MINIMUM_INTERVALS[_family])
 
 for _family, _feed in NEWS_FEEDS.items():
-    SOURCES[_family] = SourceDefinition(_family, _feed.name, 'news', 'publisher-rss-v1', ('news.public',), _feed.references, 900)
+    rolling = _family in FLASH_FAMILIES
+    SOURCES[_family] = SourceDefinition(_family, _feed.name, 'news', 'publisher-flash-v2' if rolling else 'publisher-rss-v1',
+                                        ('news.public',), _feed.references, FLASH_INTERVAL if rolling else 900)
 
 for _family, _spec in TUSHARE_SPECS.items():
     _kind = 'catalog' if _spec.mode == 'catalog' else 'calendar' if _spec.mode == 'calendar' else 'market'

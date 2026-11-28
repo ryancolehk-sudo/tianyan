@@ -14,6 +14,7 @@ import type { ArticleState, NewsAiVersion, NewsArticle, NewsPeriod, NewsSource }
 import './news-center.css';
 import { newsCategory, usePreferences } from '../../shared/preferences';
 import { ArticleSecurities, SecurityEvidence } from './ArticleSecurities';
+import { IndustryBoardCards } from './IndustryBoardCards';
 import { usePaneScroll } from '../../shared/workspaceState';
 
 function useRemote<T>(load: () => Promise<T>, key: string) {
@@ -62,7 +63,41 @@ export function NewsCenter() {
   const navigation = useNavigation();
   const query = new URLSearchParams(navigation.search);
   const period = query.get('period');
+  if (query.get('view') === 'topics') return <IndustryTopics/>;
   return query.get('view') === 'daily' ? <NewsPaper key={period ?? 'day'} period={period === 'week' || period === 'month' ? period : 'day'}/> : <NewsFeed/>;
+}
+
+function NewsOverview({ onSelect }: { onSelect: (id: string) => void }) {
+  const read = useRemote(newsApi.overview, 'news-overview');
+  const [expanded, setExpanded] = useState(false);
+  const data = read.data?.data;
+  const rows = data?.hotspots ?? [];
+  return <section className="nc-overview">
+    {read.error && <RequestError error={read.error} retry={read.reload}/>}
+    {!data && read.busy && <p role="status">正在读取资讯…</p>}
+    {data &&
+      <div className="nc-rank-panel"><header><h2>当前热点</h2><small>近 48 小时 · 按同题报道信源数</small></header>
+        {!rows.length && <p>近 48 小时暂无三家信源快讯。</p>}
+        <ol>{rows.slice(0, expanded ? rows.length : 5).map((item, index) => <li key={item.id}>
+          <span>{index + 1}</span><button onClick={() => onSelect(item.id)}>{item.title}</button>
+          <small>{item.sources.join(' · ')}</small><time dateTime={item.published_at}>{chinaTime(item.published_at)}</time></li>)}</ol>
+        {rows.length > 5 && <button className="nc-rank-more" onClick={() => setExpanded(!expanded)}>{expanded ? '收起榜单' : '完整榜单'} {expanded ? '↑' : '↓'}</button>}</div>}
+  </section>;
+}
+
+export function IndustryTopics() {
+  const navigation = useNavigation();
+  const article = new URLSearchParams(navigation.search).get('article');
+  const csrf = useNewsCsrf();
+  const read = useRemote(newsApi.overview, 'news-overview');
+  return <div className="nc-center nc-topics-page">
+    <p><a className="nc-text-button" href="/news?view=topics&mode=research">按关键词回看题材</a></p>
+    <IndustryBoardCards overview={read.data?.data}
+      search={navigation.search} onFilter={changeQuery}
+      busy={read.busy} error={read.error} retry={read.reload}
+      onSelect={id => changeQuery({ article: id })}/>
+    {article && <NewsArticleDialog key={article} id={article} csrf={csrf} close={() => changeQuery({ article: null })} onChange={() => {}}/>}
+  </div>;
 }
 
 function NewsFeed() {
@@ -171,6 +206,7 @@ function NewsFeed() {
       {read.error && <RequestError error={read.error} retry={read.reload}/>}
       {read.busy && !feed && <p className="nc-loading" role="status">正在读取已存资讯…</p>}
       {(!read.busy && !read.error || feed) && <>
+        {primaryView && <NewsOverview onSelect={id => changeQuery({ article: id })}/>}
         {focus && <section className="nc-focus" aria-labelledby="nc-focus-label"><h2 className="nc-section-heading" id="nc-focus-label">{focusDay === today ? '今日焦点' : '最近焦点'}</h2><ArticleSecurities article={focus}/><h3><button type="button" onClick={() => open(focus)}>{focus.title}</button></h3>{focus.summary && <p className="nc-focus-summary">{focus.summary}</p>}<div className="nc-focus-meta"><span>{focus.source_name} · {articleTime(focus, true)}{(focus.related_sources?.length ?? 0) ? ` · ${(focus.related_sources?.length ?? 0) + 1} 个出处` : ''}</span><OriginalLink article={focus} onRead={() => { if (!focus.is_read) void mutate(focus, { read: true }); }}/></div>{focus.late && <p className="nc-late-note">迟到资料 · 本次接收后归入可用内容</p>}<p className="nc-reading-note"><i/>阅读提示：保留来源表述，结合原文核对具体条件与最新进展。</p></section>}
         <section className="nc-latest" aria-labelledby="nc-latest-label"><div className="nc-list-toolbar"><h2 className="nc-section-heading" id="nc-latest-label">{saved ? '收藏资讯' : following ? '待跟进事项' : '最新资讯'}</h2><select aria-label="资讯排序" value={order} onChange={event => changeQuery({ order: event.target.value })}><option value="latest">按最新进展</option><option value="earliest">按最早发布</option></select><label className="nc-unread"><input type="checkbox" checked={unread} onChange={event => changeQuery({ unread: event.target.checked })}/><span>只看未读</span></label></div>
           <div className="nc-filter-tools"><details ref={filterDetails} open={filtersOpen || filtersClosing}><summary ref={filterTrigger} aria-expanded={filtersOpen} aria-controls="nc-feed-filters" onClick={event => { event.preventDefault(); toggleFilters(); }}><Icon name="search"/> 筛选{family || day ? ' · 已筛选' : ''}</summary><div id="nc-feed-filters" className={`nc-filter-popover${filtersClosing ? ' is-closing' : ''}`} inert={!filtersOpen} aria-hidden={!filtersOpen}><label>来源<select aria-label="资讯来源" value={family} onChange={event => changeQuery({ family: event.target.value, article: null })}><option value="">全部来源</option>{family && !feed?.sources.some(source => source.family === family) && <option value={family}>所选来源</option>}{feed?.sources.map(source => <option key={source.family} value={source.family}>{source.name}</option>)}</select></label><label>发布日期<input type="date" aria-label="资讯日期" value={day} onChange={event => changeQuery({ day: event.target.value, article: null })}/></label><label className="nc-follow-filter"><input type="checkbox" checked={following} onChange={event => changeQuery({ following: event.target.checked, view: 'feed' })}/>只看待跟进</label>{(family || day || following) && <button type="button" className="nc-text-button" onClick={() => changeQuery({ family: null, day: null, following: null, view: 'feed' })}>清除筛选</button>}</div></details><span>{feed?.total ?? 0} 条匹配资料</span><button type="button" onClick={read.reload} aria-label="刷新已存资讯"><Icon name="refresh"/></button></div>

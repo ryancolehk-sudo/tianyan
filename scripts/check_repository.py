@@ -52,6 +52,7 @@ def main():
     route_files.append(ROOT / 'backend/app/tomorrow/api.py')
     route_files.append(ROOT / 'backend/app/market/direction_api.py')
     route_files.append(ROOT / 'backend/app/market/recovery_api.py')
+    route_files.append(ROOT / 'backend/app/market/market_radar.py')
     route_files.append(ROOT / 'backend/app/market/updates.py')
     route_files.append(ROOT / 'backend/app/integrations/ifind.py')
     route_files.append(ROOT / 'backend/app/market/kpl_strength_api.py')

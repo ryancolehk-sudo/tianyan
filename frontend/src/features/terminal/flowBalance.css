@@ -7,14 +7,13 @@
   #overview-board #overview-pane-monitor .ty-overview-stock-row {
     grid-template-columns: repeat(2, minmax(0, 1.25fr)) minmax(158px, 1fr);
   }
+  #overview-board #overview-pane-monitor .ty-overview-stock-row > .ty-market-context {
+    grid-column: auto;
+    overflow: hidden;
+  }
   #overview-board #overview-pane-monitor .ty-overview-funds { display: flex; flex-direction: column; }
   #overview-board #overview-pane-monitor .ty-overview-funds-rank { min-height: 0; display: flex; flex: 1; flex-direction: column; }
   #overview-board #overview-pane-monitor .ty-overview-funds-rank .ty-table-scroll { flex: 1; }
-}
-@media (min-width: 1700px) and (min-height: 600px) {
-  #overview-board #overview-pane-monitor .ty-overview-stock-row {
-    grid-template-columns: repeat(2, minmax(0, 1.25fr)) repeat(2, minmax(158px, 1fr));
-  }
 }
 @media (min-width: 1200px) and (max-height: 599px) {
   #overview-board #overview-pane-monitor .ty-overview-market-grid {

@@ -125,6 +125,143 @@ class EditionSummary(DTO):
     ai_state: str
 
 
+class ArticleHeadline(DTO):
+    id: UUID
+    title: str
+    published_at: AwareDatetime
+
+
+class HotHeadline(ArticleHeadline):
+    sources: list[str]
+
+
+class BriefHeadline(DTO):
+    id: UUID
+    title: str
+    published_at: AwareDatetime | None
+    published_day: date | None = None
+    received_at: AwareDatetime | None = None
+    source_name: str
+
+
+class ArchivedHeadline(DTO):
+    title: str
+    published_at: AwareDatetime
+    source_url: str
+    source_name: str
+
+
+class IndustryMarketQuote(DTO):
+    pct_change: float | None
+    main_net_cny: float | None
+    source_time: AwareDatetime | None
+    received_at: AwareDatetime | None = None
+
+
+class TopicBreadthCoverage(DTO):
+    quoted: int
+    members: int | None
+    members_day: date | None
+    partial: bool
+
+
+class IndustryHeadline(DTO):
+    code: str
+    name: str
+    latest: BriefHeadline | ArchivedHeadline | None
+    market: IndustryMarketQuote | None = None
+    strength: float | None = None
+    strength_coverage: TopicBreadthCoverage | None = None
+
+
+class TopicSourceState(DTO):
+    family: str
+    name: str
+    status: str
+    interval_seconds: int | None
+    received_at: AwareDatetime | None
+
+
+StreamImportance = Literal['important', 'watch', 'regular']
+StreamEvent = Literal['order', 'supply', 'catalyst']
+
+
+class StreamHeadline(BriefHeadline):
+    importance: StreamImportance
+    event_type: StreamEvent | None
+    reason: str | None
+    publisher_highlighted: bool
+    reports: list[BriefHeadline] = Field(default_factory=list)
+    excerpt: str | None = None
+
+
+class HotEvent(StreamHeadline):
+    heat: float
+    sources: list[str]
+    history: list[float | None]
+    trend: Literal['up', 'down', 'flat', 'new', 'unknown']
+    change_pct: float | None
+
+
+class TopicStream(DTO):
+    items: list[StreamHeadline]
+    next_cursor: str | None
+    featured: list[StreamHeadline] = Field(default_factory=list)
+    hot_events: list[HotEvent] = Field(default_factory=list)
+    ranked_at: AwareDatetime | None = None
+
+
+PickCategory = Literal['产业催化', '订单与中标', '供应变化', '宏观政策', '公司动态', '市场与资金']
+
+
+class PickScores(DTO):
+    impact: int = Field(strict=True, ge=0, le=35)
+    evidence: int = Field(strict=True, ge=0, le=30)
+    novelty: int = Field(strict=True, ge=0, le=20)
+    timeliness: int = Field(strict=True, ge=0, le=15)
+
+    @property
+    def total(self):
+        return self.impact + self.evidence + self.novelty + self.timeliness
+
+
+class FinancePick(BriefHeadline):
+    category: PickCategory
+    summary: str
+    reason: str
+    score: int
+    scores: PickScores
+    is_read: bool
+    reports: list[BriefHeadline]
+
+
+class PickEdition(DTO):
+    day: date
+    cutoff: AwareDatetime
+    published_at: AwareDatetime
+    model: str
+    rubric: str
+
+
+class TopicPicks(DTO):
+    edition: PickEdition | None
+    days: list[date]
+    items: list[FinancePick]
+
+
+class NewsOverview(DTO):
+    hotspots: list[HotHeadline]
+    industries: list[IndustryHeadline]
+    market_trade_day: date | None = None
+    concepts: list[IndustryHeadline] = Field(default_factory=list)
+    strength_topics: list[IndustryHeadline] = Field(default_factory=list)
+    concept_trade_day: date | None = None
+    strength_trade_day: date | None = None
+    breadth_trade_day: date | None = None
+    breadth_basis: Literal['daily_close', 'intraday'] | None = None
+    sources: list[TopicSourceState] = Field(default_factory=list)
+
+
 class NewsFeedView(DTO):
     items: list[NewsArticleView]
     next_cursor: str | None

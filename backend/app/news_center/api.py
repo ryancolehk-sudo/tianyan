@@ -23,6 +23,27 @@ ERRORS = {401: {'model': Error}, 403: {'model': Error}, 404: {'model': Error},
 CACHED_RESPONSES = {**ERRORS, 304: {'description': 'Authorized cached representation is unchanged.'}}
 
 
+@router.get('/api/v1/news/overview', response_model=Envelope[s.NewsOverview], operation_id='newsOverview')
+def overview(request: Request, identity=Depends(principal), db: Session = Depends(db_session)):
+    from app.news_center.overview import headlines
+    return envelope(request, headlines(db))
+
+
+@router.get('/api/v1/news/topic-stream', response_model=Envelope[s.TopicStream], responses=ERRORS, operation_id='getTopicStream')
+def topic_stream(request: Request, cursor: str | None = Query(default=None, max_length=768),
+                 limit: int = Query(default=40, ge=1, le=100), importance: s.StreamImportance | None = None,
+                 event_type: s.StreamEvent | None = None, layout: Literal['timeline','frontpage','hot'] = 'timeline',
+                 identity=Depends(principal), db: Session = Depends(db_session)):
+    from app.news_center.topic_stories import topic_stream as read_stream
+    return envelope(request, read_stream(db, identity[0].id, cursor, limit, importance=importance, event_type=event_type, layout=layout))
+
+
+@router.get('/api/v1/news/topic-picks', response_model=Envelope[s.TopicPicks], responses=ERRORS, operation_id='getTopicPicks')
+def topic_picks(request: Request, day: date | None = None, identity=Depends(principal), db: Session = Depends(db_session)):
+    from app.news_center.picks import read_edition
+    return envelope(request, read_edition(db, identity[0].id, day))
+
+
 @router.get('/api/v1/news/topics', response_model=Envelope[s.TopicResearchView], responses=ERRORS, operation_id='getTopicResearch')
 def topic_research(request: Request, topic_source: str = Query(min_length=1, max_length=80),
     topic_key: str = Query(min_length=1, max_length=120), keyword: str = Query(min_length=1, max_length=80),

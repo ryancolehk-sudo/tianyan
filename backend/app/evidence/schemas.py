@@ -66,6 +66,9 @@ class NewsPayload(DTO):
     source_name: NonEmpty | None = None
     published_day: date | None = None
     securities: list[NewsSecurity] = Field(default_factory=list, max_length=20)
+    industry_codes: list[str] = Field(default_factory=list, max_length=150)
+    board_codes: list[str] = Field(default_factory=list, max_length=150)
+    publisher_highlight: Literal['level:A', 'level:B', 'titleColor:2', 'titleColor:3'] | None = None
     # Preserve publisher-shaped fields in older immutable payloads verbatim.
     secCode: str | None = Field(default=None, max_length=200)
     secName: str | None = Field(default=None, max_length=200)

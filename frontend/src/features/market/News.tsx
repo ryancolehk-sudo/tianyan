@@ -44,7 +44,10 @@ export function News() {
   const navigation = useNavigation();
   const query = new URLSearchParams(navigation.search);
   if (query.get('legacy') === '1') return <LegacyNews/>;
-  return query.get('view') === 'topics' ? <TopicResearch/> : <NewsCenter/>;
+  if (query.get('view') === 'topics' && ['topic', 'trade_day', 'as_of_time', 'return_section', 'mode'].some(key => query.has(key))) {
+    return <TopicResearch/>;
+  }
+  return <NewsCenter/>;
 }
 
 function LegacyNews() {

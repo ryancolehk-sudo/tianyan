@@ -14,7 +14,7 @@ from urllib.parse import urlencode, urljoin, urlsplit
 from app.evidence.schemas import NewsPayload, ReferencePayload
 from app.market.protocol import MAX_BODY, SHANGHAI, Response, SourceFailure, fetch_https
 from app.market.reference import ReferenceBatch
-from app.market.news_feeds import NEWS_FEEDS
+from app.market.news_feeds import FLASH_FAMILIES, NEWS_FEEDS
 
 URLS = {
     **{family: feed.url for family, feed in NEWS_FEEDS.items()},
@@ -212,6 +212,9 @@ def fetch_cninfo_batch(*, clock=None, reserve=None):
 
 def fetch_public(family):
     url=URLS[family]
+    if family == 'cls_flash':
+        from app.market.review_fetch import cls_url
+        url = cls_url(int(time.time()))
     data=None
     if family=='cninfo_announcements':
         today=datetime.now(UTC).astimezone(SHANGHAI).date()
@@ -309,6 +312,9 @@ def publisher_news(family, body, received_at):
 def parse_public(family,body,received_at):
     try:
         if received_at.utcoffset() is None:raise ValueError('unaware receipt')
+        if family in FLASH_FAMILIES:
+            from app.market.flash_news import parse_flash
+            return parse_flash(family, body, received_at)
         if family in NEWS_FEEDS:
             return publisher_news(family,body,received_at)
         if family=='hk_gov_finance':

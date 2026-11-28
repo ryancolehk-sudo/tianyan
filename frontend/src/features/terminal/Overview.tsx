@@ -11,12 +11,14 @@ import { useWorkspaceState } from '../../shared/workspaceState';
 import { StockRanking } from './StockRanking';
 import { KplStrengthWorkspace } from './KplStrengthWorkspace';
 import { OverviewFunds } from './OverviewFunds';
+import { MarketStatus } from './MarketStatus';
 import { OverviewBoards } from './OverviewBoards';
 import { OverviewLadder } from './OverviewLadder';
 
 export function Overview(props: PageProps & {fundsData: WorkbenchData; selectFund: (code: string) => void}) {
   const { data, selected, selectStock, busy, asOfTime } = props;
   const [notesOpen, setNotesOpen] = useWorkspaceState(`${props.session.data.user.id}:overview-notes:${data.trade_day}:${asOfTime}`, false);
+  const [marketContext, setMarketContext] = useWorkspaceState<'radar' | 'boards' | 'funds'>(props.session.data.user.id + ':overview:market-context', 'radar');
   const navigation = useNavigation();
   const explicitDay = new URLSearchParams(navigation.search).get('trade_day') ?? '';
   const { market } = useMarketSession(data.market_session);
@@ -50,8 +52,16 @@ export function Overview(props: PageProps & {fundsData: WorkbenchData; selectFun
         <StockRanking readingKey={`${props.session.data.user.id}:overview-rank:${data.trade_day}:${asOfTime}:gain`} rows={data.stocks} selected={selected?.code ?? null} onSelect={selectStock} dailyClose={dailyClose} sourceLabel={dailyClose ? `${data.trade_day} 收盘` : `行情 ${time(stockTime)}`} watch={props.watch}
           focus={{session:props.session,day:data.trade_day,cutoff:asOfTime,enabled:data.capabilities.some(item=>item.key==='focused_quotes'&&item.status==='available')}}/>
         <SectorTracking {...props} compact/>
-        {ranking}
-        <OverviewBoards {...props}/>
+        <div className="ty-market-context">
+          <div className="ty-market-context-switch" role="group" aria-label="市场概览">
+            <button type="button" aria-pressed={marketContext === 'radar'} onClick={() => setMarketContext('radar')}>盘面结构</button>
+            <button type="button" aria-pressed={marketContext === 'boards'} onClick={() => setMarketContext('boards')}>板块列表</button>
+            <button type="button" aria-pressed={marketContext === 'funds'} onClick={() => setMarketContext('funds')}>资金流向</button>
+          </div>
+          {marketContext === 'radar' && <MarketStatus {...props}/>}
+          {marketContext === 'boards' && <OverviewBoards {...props}/>}
+          {marketContext === 'funds' && ranking}
+        </div>
       </div>
     </div>}/>;
 }

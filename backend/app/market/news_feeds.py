@@ -62,6 +62,19 @@ NEWS_FEEDS = {
         ('https://news.un.org/en/rss-feeds', 'https://www.un.org/en/about-us/terms-of-use')),
 }
 
+FLASH_FAMILIES = ('ths_flash', 'cls_flash', 'eastmoney_flash')
+FLASH_INTERVAL = 60
+NEWS_FEEDS.update({
+    'ths_flash': NewsFeed('同花顺 · 快讯', '同花顺', '中国', '财经',
+        'https://news.10jqka.com.cn/tapp/news/push/stock/?page=1&tag=&track=website&pagesize=50',
+        ('news.10jqka.com.cn', 'stock.10jqka.com.cn', 'stockpage.10jqka.com.cn'), ('https://news.10jqka.com.cn/',)),
+    'cls_flash': NewsFeed('财联社 · 电报', '财联社', '中国', '财经',
+        'https://www.cls.cn/v1/roll/get_roll_list', ('www.cls.cn',), ('https://www.cls.cn/telegraph',)),
+    'eastmoney_flash': NewsFeed('东方财富 · 快讯', '东方财富', '中国', '财经',
+        'https://np-weblist.eastmoney.com/comm/web/getFastNewsList?client=web&biz=web_724&fastColumn=102&sortEnd=&pageSize=50&req_trace=1',
+        ('finance.eastmoney.com',), ('https://kuaixun.eastmoney.com/',)),
+})
+
 EXISTING_NEWS = {
     'hk_gov_finance': ('香港政府新聞網', '中国与港澳', '财经'),
     'ecb_news': ('欧洲中央银行', '欧洲', '政策'),

@@ -13,6 +13,7 @@ from app.db import db_session
 from app.evidence.api import business_key
 from app.evidence.common import now, write_once
 from app.http import envelope
+from app.market.market_radar import router as market_radar_router
 from app.market.review_jobs import batch_status, enqueue_collection
 from app.market.review_notes import (
     ReviewNotesInput,
@@ -29,6 +30,7 @@ from app.schemas import Envelope, Error
 from app.read_cache import cached_endpoint
 
 router = APIRouter()
+router.include_router(market_radar_router)
 ERRORS = {code: {'model': Error} for code in (401, 403, 404, 409, 422, 429, 503)}
 CACHED_RESPONSES = {**ERRORS, 304: {'description': 'Authorized cached representation is unchanged.'}}
 

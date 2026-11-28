@@ -1,6 +1,7 @@
 """Offline publisher fixtures plus real PostgreSQL collection/permission checks."""
 import hashlib
 import gzip
+import json
 import uuid
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.db import engine
 from app.market.collect import store_news_batch
 from app.market.models import SourceSettings
-from app.market.news_feeds import NEWS_FEEDS, NEWS_FAMILIES
+from app.market.news_feeds import FLASH_FAMILIES, NEWS_FEEDS, NEWS_FAMILIES
 from app.market.protocol import ALLOWED_HOSTS, MAX_BODY, SourceFailure, fetch_https
 from app.market.public import URLS, parse_public
 from app.market.registry import SOURCES
@@ -84,7 +85,7 @@ def feed(family, *, title='Synthetic original', link=None, date='Wed, 21 Oct 202
             + f'<description>{escape(summary)}</description>{extra}</item></channel></rss>').encode()
 
 
-@pytest.mark.parametrize('family', NEWS_FEEDS)
+@pytest.mark.parametrize('family', [family for family in NEWS_FEEDS if family not in FLASH_FAMILIES])
 def test_every_global_publisher_has_fixed_endpoint_identity_and_parses_native_rss(family):
     batch = parse_public(family, feed(family), NOW)
     assert batch.expected == 1 and batch.rejected == 0
@@ -96,6 +97,28 @@ def test_every_global_publisher_has_fixed_endpoint_identity_and_parses_native_rs
     assert SOURCES[family].kind == 'news' and URLS[family] == NEWS_FEEDS[family].url
     assert NEWS_FEEDS[family].url.split('/')[2] in ALLOWED_HOSTS
     assert SOURCES[family].minimum_interval >= 900
+
+
+@pytest.mark.parametrize('family', FLASH_FAMILIES)
+def test_native_rolling_feeds_keep_publisher_identity_and_reject_future_items(family):
+    stamp = int((NOW - timedelta(minutes=5)).timestamp())
+    item = {'id': 42, 'ctime': stamp, 'title': '合成快讯'}
+    if family == 'ths_flash':
+        item['url'] = 'https://news.10jqka.com.cn/synthetic/42'
+        body = {'code': 200, 'data': {'list': [item, {**item, 'ctime': stamp + 600}]}}
+    elif family == 'cls_flash':
+        body = {'errno': 0, 'data': {'roll_data': [item, {**item, 'ctime': stamp + 600}]}}
+    else:
+        body = {'code': 1, 'data': {'fastNewsList': [
+            {'code': 42, 'showTime': '2026-10-21 17:55:00', 'title': '合成快讯'},
+            {'code': 43, 'showTime': '2026-10-21 18:05:00', 'title': '超出截止'},
+        ]}}
+    result = parse_public(family, json.dumps(body).encode(), NOW)
+    assert (result.expected, result.rejected, result.partial) == (2, 1, True)
+    key, payload, published = result.records[0]
+    assert key == '42' and payload.source_name == NEWS_FEEDS[family].publisher
+    assert published == NOW - timedelta(minutes=5)
+    assert NEWS_FEEDS[family].url.split('/')[2] in ALLOWED_HOSTS
 
 
 @pytest.mark.parametrize('link', ['https://example.com/not-publisher', 'https://127.0.0.1/private',
