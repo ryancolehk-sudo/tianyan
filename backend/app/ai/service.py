@@ -122,11 +122,11 @@ def validated(body, db):
         data_module().validate_data_input(db, body)
 
 
-def store_connection(db, user, body, identity=None, request_id=None):
+def store_connection(db, user, body, identity=None, request_id=None, *, owner_id=None):
     if identity:
         body = body.model_copy(update={"id": identity})
     validated(body, db)
-    row = get_connection(db, identity, materialize=True) if identity else None
+    row = get_connection(db, identity, materialize=True, owner_id=owner_id) if identity else None
     if row and body.expected_revision is not None and body.expected_revision != row.revision:
         raise APIError(409, "configuration_changed", "接入配置已变化，请重新加载后修改。")
     if row and row.kind != body.kind:
@@ -304,7 +304,22 @@ def update_binding(db, user, feature, body, request_id=None):
     return settings_view(db, user.id), "complete", []
 
 
-def resolve_feature(db, feature, owner_id=None):
+def authorized_plan_codex(db, connection_id, owner_id):
+    from app.chatgpt import oauth
+    from app.chatgpt.service import account_for_connection, require_available
+    require_available()
+    connection = db.get(Connection, connection_id)
+    if (not owner_id or not connection or connection.owner_id != owner_id or connection.archived
+            or connection.kind != 'model' or connection.template != 'chatgpt_plan'):
+        raise APIError(404, 'not_found', '当前账号没有这个 Codex 连接。')
+    account = account_for_connection(db, connection.id, owner_id=owner_id)
+    if (not account or account.state != 'connected' or not account.secret_ref or connection.secret_ref != account.secret_ref
+            or not oauth.SHARING_SCOPES.issubset(set(account.scopes or []))):
+        raise APIError(409, 'chatgpt_plan_not_authorized', '此 Codex 账号需要重新授权。')
+    return connection
+
+
+def resolve_feature(db, feature, owner_id=None, *, plan_connection_id=None, plan_model=None):
     if feature not in s.FEATURES or not s.FEATURES[feature][2]:
         raise APIError(409, "feature_not_implemented", "该功能业务待接入。")
     config, binding = db.get(AiSettings, 1), db.get(AiBinding, feature)
@@ -312,9 +327,19 @@ def resolve_feature(db, feature, owner_id=None):
         raise APIError(409, "ai_disabled", "全局 AI 已关闭，请先在数据中心开启。")
     if not binding or not binding.enabled:
         raise APIError(409, "feature_disabled", "此 AI 功能尚未开启，请先完成数据中心的模型分配。")
-    personal = personal_connection(db, owner_id)
-    connection = usable_connection(db, personal.id if personal else binding.connection_id or config.default_connection_id, owner_id)
-    fallback_id = None if personal else binding.fallback_connection_id
+    if plan_model is not None and plan_connection_id is None:
+        raise APIError(409, 'invalid_model_selection', '请选择本次复盘使用的 Codex 账号。')
+    if plan_connection_id is not None:
+        if feature != "plan_generation" or owner_id is None:
+            raise APIError(409, "invalid_model_selection", "仅本人明日预案可指定此模型。")
+        connection_id = uuid.UUID(str(plan_connection_id))
+        connection = (authorized_plan_codex(db, connection_id, owner_id) if plan_model is not None
+                      else usable_connection(db, connection_id, owner_id))
+        fallback_id = None
+    else:
+        personal = personal_connection(db, owner_id)
+        connection = usable_connection(db, personal.id if personal else binding.connection_id or config.default_connection_id, owner_id)
+        fallback_id = None if personal else binding.fallback_connection_id
     configured_fallback = db.get(Connection, fallback_id) if fallback_id else None
     fallback = None
     if fallback_id:
@@ -330,7 +355,11 @@ def resolve_feature(db, feature, owner_id=None):
                 "fallback_revision": configured_fallback.revision if configured_fallback else None,
                 "fallback_credential_fingerprint": (configured_fallback.last_test or {}).get("_credential_fingerprint") if configured_fallback else None,
                 "fallback_available": fallback is not None}
-    if personal:
+    if plan_connection_id is not None:
+        snapshot["plan_connection_id"] = str(connection.id)
+    if plan_model is not None:
+        snapshot["plan_model"] = plan_model
+    if connection.template == "chatgpt_plan":
         snapshot["billing_source"] = "chatgpt_plan"
         snapshot["owner_id"] = str(owner_id)
     return connection, fallback, snapshot

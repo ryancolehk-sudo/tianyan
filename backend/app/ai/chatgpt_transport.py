@@ -349,9 +349,13 @@ def exchange(api_key, model, prompt=None, *, system=None, discovery=False, timeo
         if media_type != "text/event-stream":
             raise _invalid()
         return _stream(response, api_key, deadline, expired)
-    except ModelFailure:
+    except ModelFailure as failure:
+        if discovery and failure.code == "outcome_unknown":
+            raise _failure("model_catalog_unavailable", "未收到完整的 Codex 模型目录。可刷新目录或填写模型 ID。") from None
         raise
     except (OSError, http.client.HTTPException):
+        if discovery and sent:
+            raise _failure("model_catalog_unavailable", "未收到完整的 Codex 模型目录。可刷新目录或填写模型 ID。") from None
         raise _unknown() if sent else ModelFailure("connection_failed", "无法连接 ChatGPT，尚未发出请求。") from None
     finally:
         timer.cancel()

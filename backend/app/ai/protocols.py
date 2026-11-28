@@ -22,6 +22,12 @@ class ModelFailure(Exception):
         super().__init__(message)
 
 
+class ReplyFormatError(ValueError):
+    def __init__(self, code, message):
+        self.code = code
+        super().__init__(message)
+
+
 @dataclass
 class Reply:
     text: str
@@ -217,9 +223,14 @@ def exchange(endpoint, protocol, api_key, model, prompt=None, *, system=None, di
             raise ModelFailure("response_too_large", "模型响应超过本机允许的大小。", sent=True)
         try:
             body = json.loads(raw)
+        except (ValueError, UnicodeError):
+            raise ModelFailure("response_not_json", "接口回复无法解析为 JSON，请核对 API 地址与协议。", sent=True, status=response.status) from None
+        try:
             return parse_reply(body, protocol, discovery=discovery, secret=api_key)
+        except ReplyFormatError as error:
+            raise ModelFailure(error.code, str(error), sent=True, status=response.status) from None
         except (ValueError, TypeError, KeyError, IndexError, AttributeError):
-            raise ModelFailure("invalid_response", "模型返回格式不符合所选协议。", sent=True) from None
+            raise ModelFailure("response_shape_mismatch", "接口返回了 JSON，但缺少所选协议要求的字段。请核对模型的协议设置。", sent=True, status=response.status) from None
     except ModelFailure:
         raise
     except (OSError, ssl.SSLError, http.client.HTTPException):
@@ -249,12 +260,20 @@ def parse_reply(body, protocol, *, discovery=False, secret=""):
         return Reply(text="", models=models)
     usage = body.get("usage") or {}
     if protocol == "openai_chat":
-        message = body["choices"][0]["message"]
+        choice = body["choices"][0]
+        reason = choice.get("finish_reason")
+        if reason == "length":
+            raise ReplyFormatError("output_limit_reached", "模型达到输出长度上限，回复被截断。请在模型设置中检查最大输出 Token 数。")
+        if reason == "content_filter":
+            raise ReplyFormatError("response_filtered", "供应商的内容过滤中止了回复。")
+        message = choice["message"]
+        if reason in {"tool_calls", "function_call"} or message.get("tool_calls") or message.get("function_call"):
+            raise ReplyFormatError("response_tool_call", "模型返回了工具调用，此任务需要文本回复。")
         text = message.get("content")
         if isinstance(text, list):
             text = "\n".join(item.get("text", "") for item in text if isinstance(item, dict) and item.get("type") == "text")
-        if message.get("tool_calls") or body["choices"][0].get("finish_reason") == "length":
-            raise ValueError("incomplete or tool output")
+        if not text and message.get("reasoning_content"):
+            raise ReplyFormatError("reasoning_without_answer", "模型只返回了推理过程，没有给出最终正文。")
         incoming, outgoing = usage.get("prompt_tokens"), usage.get("completion_tokens")
     elif protocol == "openai_responses":
         if body.get("status") not in {None, "completed"}:
@@ -272,7 +291,7 @@ def parse_reply(body, protocol, *, discovery=False, secret=""):
         text = "\n".join(item["text"] for item in body["content"] if item.get("type") == "text")
         incoming, outgoing = usage.get("input_tokens"), usage.get("output_tokens")
     if not isinstance(text, str) or not text.strip():
-        raise ValueError("empty response")
+        raise ReplyFormatError("response_no_text", "模型回复中没有可用的正文。")
     text = text.strip()
     if secret:
         text = text.replace(secret, "[已隐藏]")

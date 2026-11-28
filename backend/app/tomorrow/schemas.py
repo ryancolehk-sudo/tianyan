@@ -35,6 +35,7 @@ class RiskPolicy(DTO):
 
 class PlanSettingsPatch(DTO):
     expected_revision: int = Field(ge=0)
+    model_connection_id: UUID | None = None
     enabled: StrictBool | None = None
     use_ai: StrictBool | None = None
     cash: float | None = Field(default=None, ge=0, allow_inf_nan=False)
@@ -49,18 +50,54 @@ class PlanSettingsPatch(DTO):
         return self
 
 
+class PlanAiActivation(DTO):
+    model_connection_id: UUID
+
+
+class PlanReviewSelection(DTO):
+    connection_id: UUID
+    materials_digest: str | None = Field(default=None, pattern=r'^[a-f0-9]{64}$')
+    enable_ai: StrictBool = False
+    source_ids: list[UUID] | None = Field(default=None, min_length=1, max_length=200)
+
+
+class PlanCodexReview(PlanReviewSelection):
+    model: str = Field(min_length=1, max_length=200, pattern=r'^[!-~]+$')
+
+
+class PlanApiReview(PlanReviewSelection):
+    connection_revision: int = Field(ge=1)
+    enable_connection: StrictBool = False
+
+
 class PlanRunInput(DTO):
+    expected_settings_revision: int | None = Field(default=None, ge=0)
+    model_connection_id: UUID | None = None
+    codex_review: PlanCodexReview | None = None
+    api_review: PlanApiReview | None = None
     source_trade_day: date | None = None
     target_trade_day: date | None = None
     as_of_time: AwareDatetime | None = None
     slot: Slot = 'manual'
-    use_ai: StrictBool = True
+    use_ai: StrictBool = False
     regenerate: StrictBool = False
     prepare: StrictBool = False
+
+    @model_validator(mode='after')
+    def explicit_ai_model(self):
+        if self.codex_review or self.api_review:
+            if (not self.use_ai or self.model_connection_id or self.expected_settings_revision is None
+                    or (self.codex_review and self.api_review)):
+                raise ValueError('本次模型复盘需要当前设置版本、AI 模式和唯一的模型选择。')
+        if self.model_connection_id is not None and not self.use_ai:
+            raise ValueError('指定模型时请选择 AI 复盘。')
+        return self
 
 
 class PlanRunView(DTO):
     id: UUID
+    requested_model: str | None = None
+    model_error: str | None = None
     source_trade_day: date
     target_trade_day: date | None
     slot: Slot
@@ -128,6 +165,7 @@ class ReportSection(DTO):
 
 
 class PlanReportV1(DTO):
+    can_export: bool = False
     format: Literal['tianyan.tomorrow.report.v1']
     source_trade_day: date
     target_trade_day: date | None
@@ -149,6 +187,7 @@ class PlanReportV1(DTO):
     slot: Slot
     status: Literal['draft', 'confirmed']
     author_type: Literal['rule', 'ai', 'manual']
+    generation_models: list[str] = Field(default_factory=list)
     content_hash: str
     created_at: AwareDatetime
     confirmed_at: AwareDatetime | None

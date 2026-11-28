@@ -1,0 +1,95 @@
+.pr-review-choice {
+  min-width: 0;
+  margin: 18px 0;
+  color: #24364a;
+  font: 14px/1.5 "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+.pr-choice-heading, .pr-model-line, .pr-model-line label, .pr-choice-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.pr-choice-heading { justify-content: space-between; margin-bottom: 9px; }
+.pr-choice-heading strong { font-size: 15px; }
+.pr-method-options { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.pr-review-choice .pr-method-options button {
+  display: grid;
+  grid-template-columns: 14px minmax(0,1fr);
+  align-content: center;
+  align-items: center;
+  gap: 2px 9px;
+  min-height: 65px;
+  padding: 9px 12px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #c9d2dc;
+  border-radius: 5px;
+  color: #24364a;
+  cursor: pointer;
+}
+.pr-method-options strong { font-size: 15px; }
+.pr-review-choice small { font-size: 12px; color: #53677b; }
+.pr-method-options small { grid-column: 2; line-height: 1.45; }
+.pr-method-dot { box-sizing: border-box; width: 14px; height: 14px; border: 1px solid #899baa; border-radius: 50%; }
+.pr-review-choice .pr-method-options [aria-pressed="true"] { background: #eef4ff; border-color: #3967aa; color: #214b86; }
+.pr-method-options [aria-pressed="true"] .pr-method-dot { border: 4px solid #3967aa; background: #fff; }
+.pr-method-options button:hover:enabled { border-color: #3967aa; }
+.pr-model-line { margin-top: 12px; }
+.pr-model-line label { max-width: 100%; font-weight: 600; }
+.pr-model-line select { min-width: 120px; max-width: 100%; min-height: 32px; padding: 4px 8px; border: 1px solid #a4b5c8; border-radius: 4px; background: white; color: #24364a; font: inherit; }
+.pr-choice-next { justify-content: space-between; margin-top: 12px; color: #4f6072; font-size: 13px; }
+.pr-review-choice button.pr-generate { margin-left: auto; min-height: 34px; padding: 6px 16px; border: 1px solid #2959a0; border-radius: 4px; background: #2959a0; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.pr-review-choice button.pr-generate:hover:enabled { background: #20487e; }
+.pr-review-choice button:disabled { cursor: default; }
+.pr-direct-codex { margin-top: 12px; }
+.pr-direct-codex p { margin: 6px 0; font: inherit; }
+.pr-direct-codex .pr-direct-gate, .pr-run-sources, .pr-custom-link { color: #526579; font-size: 13px; }
+.pr-run-sources summary { width: fit-content; cursor: pointer; }
+.pr-run-sources > div { max-height: 165px; overflow: auto; margin: 4px 0 8px; }
+.pr-run-sources label { display: flex; gap: 6px; align-items: center; min-height: 27px; }
+.pr-catalog-head, .pr-custom-model { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; }
+.pr-catalog-head { justify-content: space-between; margin: 10px 0 6px; }
+.pr-catalog-head button, .pr-review-choice button.pr-custom-link { background: transparent; border: 0; padding: 3px 0; color: #2b598a; font: inherit; cursor: pointer; }
+.pr-catalog-head button, .pr-review-choice button.pr-custom-link { font-size: 13px; }
+.pr-catalog-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 195px), 1fr)); gap: 6px; max-height: 230px; overflow-y: auto; }
+.pr-catalog-list button { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; min-width: 0; min-height: 38px; border: 1px solid #bccadd; border-radius: 4px; background: white; color: #234b78; text-align: left; font: inherit; cursor: pointer; }
+.pr-catalog-list button:hover:enabled { border-color: #2959a0; background: #f2f6fc; }
+.pr-catalog-list button span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.pr-catalog-list small { display: block; }
+.pr-catalog-verb { white-space: nowrap; color: #2959a0; font-size: 12px; }
+.pr-direct-codex button:disabled { opacity: .62; }
+.pr-api-connection { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 12px; margin-bottom: 8px; }
+.pr-api-connection strong { overflow-wrap: anywhere; }
+.pr-api-connection strong span { font-weight: 500; }
+.pr-api-connection .pr-custom-link { margin-left: auto; }
+.pr-api-state { color: #526579; font-size: 13px; }
+.pr-custom-model { margin-top: 8px; align-items: flex-end; }
+.pr-custom-model label { display: grid; gap: 3px; font-size: 13px; }
+.pr-custom-model input, .pr-run-sources > input { max-width: 100%; box-sizing: border-box; min-height: 32px; border: 1px solid #a9b9cb; border-radius: 4px; padding: 4px 8px; font: inherit; }
+.pr-custom-model button.pr-generate { margin-left: 0; }
+.pr-direct-codex input:focus-visible, .pr-run-sources summary:focus-visible { outline: 2px solid #2959a0; outline-offset: 2px; }
+.pr-review-choice :is(button,select):focus-visible { outline: 2px solid #2959a0; outline-offset: 2px; }
+.pr-choice-error { color: #9d302a; margin-top: 10px; }
+.pr-reader-nav { flex-wrap: wrap; }
+.pr-reader .pr-status { margin: 18px 0 0; }
+.pr-reader .pr-status + .pr-review-choice { margin-top: 20px; }
+.pr-preferences .pr-bound-models { display: grid; gap: 5px; margin: 8px 0 14px; }
+.pr-bound-models select { width: 100%; min-height: 34px; }
+.pr-source-filter { display: grid; gap: 4px; margin: 8px 0; }
+.pr-preferences .tp-source-options { max-height: min(38dvh, 350px); overflow: auto; padding: 4px; overscroll-behavior: contain; }
+.pr-preferences .tp-settings fieldset { min-width: 0; }
+@container (max-width: 540px) {
+  .pr-method-options { grid-template-columns: 1fr; gap: 5px; }
+  .pr-review-choice .pr-method-options button { grid-template-columns: 14px auto 1fr; min-height: 44px; }
+  .pr-method-options small { grid-column: 3; text-align: right; }
+  .pr-choice-next button.pr-generate { width: 100%; }
+}
+@media (max-width: 600px) {
+  .tp-generator .pr-method-options { grid-template-columns: 1fr; }
+}
+@media print { .pr-review-choice { display: none; } }
+.pr-material-summary { margin: 6px 0; color: #475b70; }
+.pr-material-gaps { margin: 8px 0; padding: 12px 16px; background: #fcf6ea; color: #493c29; border-left: 3px solid #997334; }
+.pr-material-gaps ul { margin: 6px 0; padding-left: 20px; }
+.pr-material-gaps button + button { margin-left: 8px; }

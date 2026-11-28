@@ -42,8 +42,8 @@ function Welcome({ account, csrf, completed }: { account: ChatGPTAccount; csrf: 
   </dialog>;
 }
 
-export function ChatGPTAccounts({ session, refreshVersion, onChanged }: {
-  session: SessionResponse; refreshVersion: number; onChanged: () => void;
+export function ChatGPTAccounts({ session, refreshVersion, onChanged, useForPlan }: {
+  session: SessionResponse; refreshVersion: number; onChanged: () => void; useForPlan?: (id: string) => void;
 }) {
   const [status, setStatus] = useState<ChatGPTStatus | null>(null);
   const [accounts, setAccounts] = useState<ChatGPTAccount[]>([]);
@@ -161,6 +161,7 @@ export function ChatGPTAccounts({ session, refreshVersion, onChanged }: {
       <p className="cg-plan-line">{current.use_for_ai ? <strong>{current.enabled ? 'Using ChatGPT plan' : 'ChatGPT 计划路径待恢复'}</strong> : <span>计划尚未用于本人业务</span>}<a className="cg-usage" href={chatGPTUsageURL} target="_blank" rel="noopener noreferrer">Manage usage</a></p>
       <p className="cg-explanation">额度由 ChatGPT 管理，本机不推测剩余额度或无限使用。切换上方查看账号不会改变调用路径，请使用“用于我的 AI 功能”确认。计划失败不会自动转到 API Key。</p>
       {current.use_for_ai && !canRequest && <p className="cg-status-note">个人路径的选择已保留，后续生成暂被阻止。请重新登录，或明确关闭个人路径后使用系统配置。</p>}
+      {useForPlan && current.enabled && current.tested && canRequest && !changedModel && <button type="button" className="dc-button-gold" disabled={busy} onClick={() => useForPlan(current.connection_id)}>使用此模型复盘</button>}
       <div className="cg-account-actions"><button type="button" disabled={busy || !status?.available} onClick={() => { void connect(current); }}>重新登录此账号</button><button type="button" disabled={busy || current.state === 'disconnected'} onClick={() => setConfirmDisconnect(true)}>断开此账号</button></div>
       {confirmDisconnect && <div className="cg-confirm"><p>将清除本机保存的此账号授权并停止后续使用。远端撤销是否成功会单独告知，已生成的研究记录保留。</p><div className="cg-confirm-actions"><button type="button" disabled={busy} onClick={() => { const account = current; void act(async () => { const result = await api.chatGPTDisconnect(account.id, csrf); setModels([]); setModel(''); setConfirmDisconnect(false); return result.data.remote_revocation_unconfirmed ? '本机授权已删除；远端撤销未确认。可在 ChatGPT 使用设置中检查并撤销本应用访问。' : '本机授权已删除，后续请求已停止。'; }); }}>确认断开</button><button type="button" disabled={busy} onClick={() => setConfirmDisconnect(false)}>取消</button></div></div>}
       {current.remote_revocation_unconfirmed && <p className="cg-status-note">远端撤销未确认。请在 <a className="cg-usage" href={chatGPTUsageURL} target="_blank" rel="noopener noreferrer">Manage usage</a> 检查本应用访问。</p>}

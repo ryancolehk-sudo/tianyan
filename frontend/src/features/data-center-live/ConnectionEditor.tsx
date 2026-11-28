@@ -46,10 +46,10 @@ function AdvancedDataSettings({ session, refresh }: { session: SessionResponse; 
     : read.error ? <ErrorNotice error={read.error} retry={read.reload}/> : <Empty title="正在读取原有采集配置"/>}</details>;
 }
 
-export function ConnectionEditor({ initial, initialKind = 'model', simpleModel = false, index, session, onSaved, cancel, refresh }: {
+export function ConnectionEditor({ initial, initialKind = 'model', simpleModel = false, index, session, onSaved, cancel, refresh, useForPlan }: {
   initial: ConnectionView | null; index: ConnectionIndex; session: SessionResponse;
   initialKind?: ConnectionKind; simpleModel?: boolean;
-  onSaved: (item: ConnectionView) => void; cancel: () => void; refresh: () => void;
+  onSaved: (item: ConnectionView) => void; cancel: () => void; refresh: () => void; useForPlan?: (id: string) => void;
 }) {
   const [saved, setSaved] = useState(initial);
   const [kind, setKind] = useState<ConnectionKind>(initial?.kind ?? initialKind);
@@ -151,6 +151,7 @@ export function ConnectionEditor({ initial, initialKind = 'model', simpleModel =
     try {
       const enabled = savedHealth.enabled ? savedHealth : (await dataCenterApi.save({ ...connectionInput(savedHealth), enabled: true }, session.data.csrf_token, savedHealth.id)).data;
       setSaved(enabled);
+      if (useForPlan) { useForPlan(enabled.id); return; }
       const settings = await dataCenterApi.settings();
       await dataCenterApi.saveSettings({ enabled: true, default_connection_id: enabled.id, expected_revision: settings.data.revision }, session.data.csrf_token);
       setNotice(settings.data.personal_connection_id ? '模型已设为全局默认并启用。已选择的本人 ChatGPT 计划仍优先生效。' : '模型已设为全局默认并启用，后续手动 AI 任务使用此配置。'); refresh();
@@ -187,7 +188,7 @@ export function ConnectionEditor({ initial, initialKind = 'model', simpleModel =
       {error !== null && <ErrorNotice error={error}/>}
       {notice && <div className="dc-feedback" role="status">{notice}</div>}
       {result && <div className={'dc-probe dc-probe-' + result.status} role="status"><div><Status value={result.status}/><span>{duration(result.elapsed_ms)} · 实际请求 {result.request_count} 次</span></div><p>{result.status === 'queued' ? '指定单项能力检测已排队，实际结果见调用记录。' : result.message}</p>{result.preview && <pre>{result.preview}</pre>}{result.error_code && <small>原因：{result.error_code}</small>}{result.job_id && <small>任务：{result.job_id}</small>}</div>}
-      <div className="dc-form-actions"><button type="button" onClick={test} disabled={!admin || !!busy || credentialBlocked || (kind !== 'model' && template !== 'ifind_mcp' && !sourceIds.length)}><span className="dc-play"/>{busy === 'test' ? '正在检测…' : kind === 'model' ? simpleModel ? '测试并保存' : '测试调用' : template === 'ifind_mcp' ? '检测iFinD连接' : '检测单项能力'}</button><button type="submit" className="dc-primary" disabled={!admin || !!busy || credentialBlocked || (kind !== 'model' && template !== 'ifind_mcp' && !sourceIds.length)}>{busy === 'save' ? '正在保存…' : '保存接入'}</button>{simpleModel && <button type="button" className="dc-button-gold" onClick={() => { void activate(); }} disabled={!admin || !!busy || !currentTested}>{busy === 'enable' ? '正在启用…' : '设为默认并启用'}</button>}</div>
+      <div className="dc-form-actions"><button type="button" onClick={test} disabled={!admin || !!busy || credentialBlocked || (kind !== 'model' && template !== 'ifind_mcp' && !sourceIds.length)}><span className="dc-play"/>{busy === 'test' ? '正在检测…' : kind === 'model' ? simpleModel ? '测试并保存' : '测试调用' : template === 'ifind_mcp' ? '检测iFinD连接' : '检测单项能力'}</button><button type="submit" className="dc-primary" disabled={!admin || !!busy || credentialBlocked || (kind !== 'model' && template !== 'ifind_mcp' && !sourceIds.length)}>{busy === 'save' ? '正在保存…' : '保存接入'}</button>{simpleModel && <button type="button" className="dc-button-gold" onClick={() => { void activate(); }} disabled={!admin || !!busy || !currentTested}>{busy === 'enable' ? '正在启用…' : useForPlan ? '选中并返回预案' : '设为默认并启用'}</button>}</div>
       <p className="dc-form-footnote">{kind === 'model' ? '首次保存默认为未启用；测试会进行一次有上限的短文本生成。' : template === 'ifind_mcp' ? '保存不查询数据。检测仅验证指数工具目录；启用后在iFinD研究面板手动取数。' : '保存不会直接发起采集。检测由行情 worker 按现有范围与限流执行。'}</p>
     </form>
     {kind !== 'model' && <AdvancedDataSettings session={session} refresh={() => { setDataVersion(version => version + 1); refresh(); }}/>}

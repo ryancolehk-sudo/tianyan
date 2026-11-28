@@ -90,13 +90,17 @@ def project_input(db, run, role, stock_offset=0):
     selected = set(run.config_snapshot.get('profile', {}).get('ai_source_ids') or [])
     from app.tomorrow.models import PlanSettings
     live = db.get(PlanSettings, run.owner_id)
-    if live is None or set(live.profile.get('ai_source_ids') or []) != selected:
+    saved_sources = set((live.profile if live else {}).get('ai_source_ids') or [])
+    one_time = run.config_snapshot.get('one_time_sources', False)
+    if saved_sources != (set() if one_time else selected):
         raise APIError(409, 'ai_material_permission_changed', '研究期间允许处理的来源变化，后续模型请求已停止。')
     refs = bundle.get('evidence_refs') or []
     allowed = {r['id']: r for r in refs if r['source_id'] in selected}
     visible = permitted(db, run.owner_id, list(allowed), run.as_of_time)
     allowed = {key: r for key, r in allowed.items() if key in visible and visible[key][0].content_hash == r['content_hash']}
     identifiers = set(allowed)
+    limited_review = bool(((run.config_snapshot.get('ai') or {}).get('plan_model') or run.config_snapshot.get('requested_model'))
+                          and any(ref['id'] not in identifiers for ref in refs))
     catalog, evidence_groups, groups_by_hash = {}, {}, {}
     object_count = 0
 
@@ -205,8 +209,10 @@ def project_input(db, run, role, stock_offset=0):
 
     material = dict(research_role=role, source_trade_day=bundle['source_trade_day'],
                     target_trade_day=bundle.get('target_trade_day'), as_of_time=bundle['as_of_time'],
-                    rule_version=bundle.get('rule_version'), limitations=bundle.get('limitations', []),
+                    rule_version=bundle.get('rule_version'), limitations=[] if limited_review else bundle.get('limitations', []),
                     approved_source_ids=sorted(selected))
+    if one_time:
+        material['one_time_sources'] = True
     if role in {'market_events', 'review_write'}:
         material['market'] = project(bundle.get('market'), 80)
     if role in {'market_events', 'sectors_stocks', 'conditional_plan', 'review_write'}:
@@ -251,6 +257,11 @@ def project_input(db, run, role, stock_offset=0):
             unresearched_scenario_state='统一标记为数据不足，不作为可执行条件',
             audit_scope='AI核对全部实际正文与已研究条件；数值表格及未研究模板由程序检查，完整投影散列同时绑定')
         material['audit_scope_complete'] = len(sections) == len(visible['sections']) and len(scenarios) == len(permitted_scenarios)
+        if limited_review:
+            # A free-text summary or uncited risk may describe excluded sources.
+            material['visible_draft'] = {}
+            material['program_checks']['audit_scope'] = '仅核对本次授权的事实和前序研究结论。'
+            material['audit_scope_complete'] = False
     material['input_limits'] = '模型深研最多30只候选，每批15只独立研究与提出条件；完整规则候选及指标另行保留。终审检查实际正文与条件，数字表格由程序检查。'
     if not any(material.get(key) for key in ('market', 'sectors', 'stocks', 'events')) or not allowed:
         raise APIError(409, 'ai_material_unavailable', '没有完整且获准的本阶段研究材料，请在预案设置选择可处理来源。')
@@ -267,7 +278,9 @@ def project_input(db, run, role, stock_offset=0):
 
 def queue_stage(db, run, role, stock_offset=0):
     from app.ai.service import resolve_feature
-    connection, _, config = resolve_feature(db, 'plan_generation', run.owner_id)
+    frozen_ai = run.config_snapshot.get('ai') or {}
+    connection, _, config = resolve_feature(db, 'plan_generation', run.owner_id,
+        plan_connection_id=frozen_ai.get('plan_connection_id'), plan_model=frozen_ai.get('plan_model'))
     if config != run.config_snapshot.get('ai'):
         raise APIError(409, 'configuration_changed', '排队后模型配置变化，已保留草稿，请用新配置重新生成。')
     material, refs = project_input(db, run, role, stock_offset)
@@ -282,7 +295,7 @@ def queue_stage(db, run, role, stock_offset=0):
                    payload={'run_id': str(ai_id)}, available_at=current, created_at=current))
         db.flush()
         ai = AiRun(id=ai_id, job_id=job_id, owner_id=run.owner_id, feature='plan_generation',
-            state='queued', stage=ROLE_NAMES[role], connection_id=connection.id, model=connection.model,
+            state='queued', stage=ROLE_NAMES[role], connection_id=connection.id, model=config.get('plan_model') or connection.model,
             trade_day=run.source_trade_day, as_of_time=run.as_of_time, config_snapshot=config,
             input_hash=digest, dedup_key=dedup, input_data=material, evidence_refs=refs,
             limitations=run.limitations, created_at=current)
@@ -493,7 +506,8 @@ def validate_ai_inputs(db, ai):
     from app.tomorrow.models import PlanSettings
     config = db.get(PlanSettings, ai.owner_id)
     current = set((config.profile if config else {}).get('ai_source_ids') or [])
-    if current != set(ai.input_data.get('approved_source_ids') or []):
+    expected_grants = set() if ai.input_data.get('one_time_sources') else set(ai.input_data.get('approved_source_ids') or [])
+    if current != expected_grants:
         raise APIError(409, 'ai_material_permission_changed', '允许AI处理的来源已变化，本阶段停止。')
     expected = {ref['id']: ref for ref in ai.evidence_refs}
     visible = permitted(db, ai.owner_id, list(expected), ai.as_of_time)

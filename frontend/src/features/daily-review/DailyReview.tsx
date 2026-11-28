@@ -19,12 +19,19 @@ import { Direction } from './Direction';
 import { DirectionBoard } from './DirectionBoard';
 import { Dragon } from './Dragon';
 import { PostcloseOverview } from './PostcloseOverview';
+import { AnomalyMonitor } from './AnomalyMonitor';
 import { NewHighs } from './NewHighs';
 import './daily-review.css';
 import { reviewLookback, usePreferences } from '../../shared/preferences';
 import { useMarketSession } from '../../shared/marketSession';
 
 export function DailyReview({ session }: { session: SessionResponse }) {
+  const nav = useNavigation();
+  if (reviewView(nav.search) === 'anomaly') return <AnomalyMonitor search={nav.search}/>;
+  return <ReviewWorkspace session={session}/>;
+}
+
+function ReviewWorkspace({ session }: { session: SessionResponse }) {
   const nav = useNavigation();
   const q = new URLSearchParams(nav.search);
   const { preferences } = usePreferences();

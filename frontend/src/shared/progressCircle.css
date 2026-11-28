@@ -1,0 +1,8 @@
+.progress-circle { display:inline-block; flex:none; vertical-align:middle; color:var(--progress-accent,#579ef2); fill:none; stroke-width:2.8; }
+.progress-circle-track { stroke:currentColor; opacity:.22; }
+.progress-circle-arc { stroke:currentColor; stroke-linecap:round; }
+.progress-circle[data-spinning] .progress-circle-arc { filter:drop-shadow(0 0 1.3px currentColor); }
+@media (prefers-reduced-motion: no-preference) {
+  .progress-circle[data-spinning] { animation:ty-progress-orbit 1s linear infinite; }
+}
+@keyframes ty-progress-orbit { to { transform:rotate(1turn); } }

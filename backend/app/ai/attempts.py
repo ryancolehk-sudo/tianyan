@@ -11,9 +11,9 @@ from app.auth import APIError
 from app.db import engine
 
 
-def attempt_record(owner_id, connection, purpose, run_id=None):
+def attempt_record(owner_id, connection, purpose, run_id=None, *, model=None):
     return AiAttempt(id=uuid.uuid4(), owner_id=owner_id, run_id=run_id, connection_id=connection.id,
-                     service_name=connection.name, model=connection.model, purpose=purpose, state="preparing",
+                     service_name=connection.name, model=model or connection.model, purpose=purpose, state="preparing",
                      started_at=datetime.now(UTC), request_count=0, safe_details={})
 
 
@@ -24,7 +24,7 @@ def price(reply, options):
     return (Decimal(str(incoming)) * reply.input_tokens + Decimal(str(outgoing)) * reply.output_tokens) / 1000000
 
 
-def perform(attempt_id, connection, credential, *, prompt=None, system=None, discovery=False, probe=False, before_send=None, time_budget=None):
+def perform(attempt_id, connection, credential, *, prompt=None, system=None, discovery=False, probe=False, before_send=None, time_budget=None, model=None):
     started = time.monotonic()
 
     def sent():
@@ -46,7 +46,7 @@ def perform(attempt_id, connection, credential, *, prompt=None, system=None, dis
                   "max_tokens": connection.options.get("max_output_tokens", 1200), "on_send": sent}
         if connection.template == "chatgpt_plan":
             from app.ai.chatgpt_transport import exchange
-            reply = exchange(credential, connection.model, prompt, **kwargs)
+            reply = exchange(credential, model or connection.model, prompt, **kwargs)
         else:
             reply = protocols.exchange(connection.endpoint, connection.protocol, credential, connection.model, prompt, **kwargs)
     except protocols.ModelFailure as error:

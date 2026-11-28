@@ -4,12 +4,17 @@ export type Slot = 'manual' | 'evening' | 'overnight';
 export type RunView = {
   id: string; source_trade_day: string; target_trade_day: string | null; slot: Slot; state: string; stage: string;
   report_id?: string | null; as_of_time: string; created_at: string; completed_at?: string | null;
-  error_code?: string | null; limitations: string[]; stages?: Array<{ role: string; state: string; ai_run_id?: string }>;
+  error_code?: string | null; requested_model?: string | null; model_error?: string | null;
+  limitations: string[]; stages?: Array<{ role: string; state: string; ai_run_id?: string }>;
 };
 export type EvidenceRef = { id: string; source_name: string; source_id: string; received_at: string; source_time?: string | null; published_at?: string | null; available_at?: string | null; content_hash: string; url?: string | null; source_url?: string | null; title?: string | null };
 export type Section = { key: string; title: string; state: string; summary: string; paragraphs: string[]; analysis?: Array<{ title: string; text: string; evidence_refs: string[]; authorship: string; review_required?: boolean }>; columns: Array<{ key: string; label: string }>; rows: Array<Record<string, unknown>>; evidence_refs: string[]; limitations: string[] };
 export type Judgment = { object_type: 'market' | 'sector' | 'stock' | 'event'; object_id: string; judgment: string; support_refs?: string[]; refuting_refs?: string[] };
 export type ReportView = {
+  can_export?: boolean;
+  content_hash?: string;
+  author_type?: 'rule' | 'ai' | 'manual'; generation_models?: string[];
+  ai_completed_roles?: string[];
   id: string; run_id: string; revision_number: number; based_on_id?: string | null; source_trade_day: string;
   target_trade_day: string | null; as_of_time: string; slot: Slot; status: 'draft' | 'confirmed'; summary: string;
   sections: Section[]; dossier: Record<string, unknown>; judgments: Judgment[]; evidence_refs: EvidenceRef[];
@@ -19,7 +24,20 @@ export type ReportView = {
 };
 export type Holding = { code: string; quantity: number; sellable_quantity: number; cost?: number | null; sector_codes?: string[] };
 export type RiskPolicy = { approved: boolean; price_rule: 'none' | 'prior_range_20'; max_total_weight?: number | null; max_stock_weight?: number | null; max_sector_weight?: number | null; risk_per_trade?: number | null };
-export type SettingsView = { revision: number; enabled: boolean; use_ai: boolean; holdings: Holding[]; cash?: number | null; risk_policy: RiskPolicy; ai_source_ids: string[]; sources?: Array<{ id: string; name: string; ai_allowed: boolean }>; evening_time: string; overnight_time: string; timezone: string };
+export type ModelConnection = { id: string; name: string; model: string; source: 'api' | 'chatgpt_plan' };
+export type CodexSetup = 'connect' | 'authorize' | 'choose_model' | 'test_model' | 'enable_model' | 'check_model' | 'ready' | 'unavailable';
+export type PlanAccount = { id: string; connection_id: string; name: string; model: string | null; revision: number };
+export type ReviewScope = { enable_ai?: boolean; source_ids?: string[]; materials_digest?: string };
+export type CodexReviewInput = ReviewScope & { connection_id: string; model: string };
+export type PlanApiConnection = { id: string; name: string; model: string | null; revision: number;
+  state: 'ready' | 'needs_enable' | 'needs_test' | 'test_failed' | 'test_unknown' | 'needs_model' | 'needs_key' };
+export type ApiReviewInput = ReviewScope & { connection_id: string; connection_revision: number; enable_connection?: boolean };
+export type DirectReviewInput = { codex_review: CodexReviewInput } | { api_review: ApiReviewInput };
+export type SettingsView = { revision: number; enabled: boolean; use_ai: boolean; holdings: Holding[]; cash?: number | null; risk_policy: RiskPolicy; ai_source_ids: string[]; sources?: Array<{ id: string; name: string; ai_allowed: boolean }>; evening_time: string; overnight_time: string; timezone: string;
+  default_connection_id?: string | null; codex_setup?: CodexSetup; codex_accounts?: PlanAccount[]; api_bound?: boolean; api_connections?: PlanApiConnection[];
+  review_materials?: {count: number; digest: string; gaps: {interfaces: string; impact: string}[]; core_missing: boolean};
+  model_options?: ModelConnection[]; model_connection_id?: string | null; model_gate?: string | null; default_model?: string | null;
+};
 export type Validation = { id?: string; scenario_id: string; status: ScenarioStatus; comment: string; evidence_refs: string[]; created_at?: string; report_id?: string; report_revision?: number };
 export type ShadowEvaluation = {
   progress?: { eligible_shadow_target_day_count?: number; goal?: number; observation_window_complete?: boolean; acceptance_status?: string };

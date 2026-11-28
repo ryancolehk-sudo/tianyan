@@ -42,6 +42,13 @@ def patch_settings(body: s.SettingsPatch, request: Request, identity=Depends(csr
         lambda db: service.update_settings(db, identity[0], body, request.state.request_id), status=200)
 
 
+@router.post('/settings/enable-ai', response_model=Envelope[dict], responses=WRITE_ERRORS, operation_id='enableTomorrowAi')
+def enable_ai(body: s.PlanAiActivation, request: Request, identity=Depends(csrf), key=Depends(business_key)):
+    require_role(identity[0], 'admin')
+    return write_once(request, identity[0], key, body,
+        lambda db: service.enable_plan_ai(db, identity[0], body.model_connection_id, request.state.request_id), status=200)
+
+
 @router.post('/runs', response_model=Envelope[s.RunView], responses=WRITE_ERRORS, status_code=201, operation_id='createTomorrowRun')
 def create_run(body: s.RunInput, request: Request, identity=Depends(csrf), key=Depends(business_key)):
     require_role(identity[0], 'admin', 'researcher')

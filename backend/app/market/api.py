@@ -303,3 +303,10 @@ def sector_membership(request: Request, day: date,
     result = read_membership(db, day, sector, as_of_time=as_of_time, observation_cutoff=observation_cutoff)
     return envelope(request, result, 'partial' if result.members else 'empty',
                     ['板块成分独立日期；报价由当前工作台提供。'], as_of_time=as_of_time)
+
+@router.get('/api/v1/review-data/anomaly', responses=ERRORS, operation_id='getAnomalyMonitor')
+def anomaly_monitor(request: Request, trade_day: date | None = None, as_of_time: AwareDatetime | None = None,
+                    identity=Depends(principal)):
+    from app.market.anomaly_archive import read_archive
+    result = read_archive(trade_day, as_of_time)
+    return envelope(request, result, 'complete' if result else 'empty', as_of_time=as_of_time)

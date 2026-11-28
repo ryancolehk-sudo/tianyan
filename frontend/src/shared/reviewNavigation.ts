@@ -1,4 +1,4 @@
-export const reviewTabs = [['emotion', '情绪周期'], ['direction', '板块轮动'], ['lhb', '龙虎榜'], ['overview', '行情总览'], ['new-highs', '百日新高']] as const;
+export const reviewTabs = [['emotion', '情绪周期'], ['direction', '板块轮动'], ['lhb', '龙虎榜'], ['overview', '行情总览'], ['new-highs', '百日新高'], ['anomaly', '异动监控']] as const;
 export type ReviewView = typeof reviewTabs[number][0];
 export function isDailyReview(path: string, search: string, hash = location.hash) {
   const q = new URLSearchParams(search);

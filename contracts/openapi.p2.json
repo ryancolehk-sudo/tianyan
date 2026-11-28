@@ -19089,6 +19089,259 @@
           }
         }
       }
+    },
+    "/api/v1/review-data/anomaly": {
+      "get": {
+        "summary": "Anomaly Monitor",
+        "operationId": "getAnomalyMonitor",
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trade_day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Trade Day"
+            }
+          },
+          {
+            "name": "as_of_time",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of Time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/tomorrow/settings/enable-ai": {
+      "post": {
+        "tags": [
+          "tomorrow"
+        ],
+        "summary": "Enable Ai",
+        "operationId": "enableTomorrowAi",
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-csrf-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128,
+              "pattern": "^[a-zA-Z0-9._:-]+$",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanAiActivation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_dict_"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -29756,6 +30009,11 @@
       },
       "PlanReportV1": {
         "properties": {
+          "can_export": {
+            "type": "boolean",
+            "title": "Can Export",
+            "default": false
+          },
           "format": {
             "type": "string",
             "const": "tianyan.tomorrow.report.v1",
@@ -29918,6 +30176,13 @@
             ],
             "title": "Author Type"
           },
+          "generation_models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Generation Models"
+          },
           "content_hash": {
             "type": "string",
             "title": "Content Hash"
@@ -30012,6 +30277,50 @@
       },
       "PlanRunInput": {
         "properties": {
+          "expected_settings_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Settings Revision"
+          },
+          "model_connection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Connection Id"
+          },
+          "codex_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanCodexReview"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "api_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanApiReview"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "source_trade_day": {
             "anyOf": [
               {
@@ -30061,7 +30370,7 @@
           "use_ai": {
             "type": "boolean",
             "title": "Use Ai",
-            "default": true
+            "default": false
           },
           "regenerate": {
             "type": "boolean",
@@ -30084,6 +30393,28 @@
             "type": "string",
             "format": "uuid",
             "title": "Id"
+          },
+          "requested_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Model"
+          },
+          "model_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Error"
           },
           "source_trade_day": {
             "type": "string",
@@ -40926,6 +41257,138 @@
           "trade_day"
         ],
         "title": "KplFocusRequest"
+      },
+      "PlanAiActivation": {
+        "properties": {
+          "model_connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Model Connection Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model_connection_id"
+        ],
+        "title": "PlanAiActivation"
+      },
+      "PlanCodexReview": {
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Connection Id"
+          },
+          "materials_digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Materials Digest"
+          },
+          "enable_ai": {
+            "type": "boolean",
+            "title": "Enable Ai",
+            "default": false
+          },
+          "source_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array",
+                "maxItems": 200,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ids"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[!-~]+$",
+            "title": "Model"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "connection_id",
+          "model"
+        ],
+        "title": "PlanCodexReview"
+      },
+      "PlanApiReview": {
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Connection Id"
+          },
+          "materials_digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Materials Digest"
+          },
+          "enable_ai": {
+            "type": "boolean",
+            "title": "Enable Ai",
+            "default": false
+          },
+          "source_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array",
+                "maxItems": 200,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ids"
+          },
+          "connection_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Connection Revision"
+          },
+          "enable_connection": {
+            "type": "boolean",
+            "title": "Enable Connection",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "connection_id",
+          "connection_revision"
+        ],
+        "title": "PlanApiReview"
       }
     },
     "securitySchemes": {

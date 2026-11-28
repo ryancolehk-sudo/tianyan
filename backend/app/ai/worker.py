@@ -93,7 +93,8 @@ def validate_run(db, job, *, selected_id=None):
     owner = db.get(User, run.owner_id) if run else None
     if not run or not owner or not owner.enabled or owner.role not in {"admin", "researcher"}:
         raise APIError(409, "owner_permission_changed", "账号权限已变化，任务已停止。")
-    connection, fallback, snapshot = service.resolve_feature(db, run.feature, run.owner_id)
+    connection, fallback, snapshot = service.resolve_feature(db, run.feature, run.owner_id,
+        plan_connection_id=run.config_snapshot.get("plan_connection_id"), plan_model=run.config_snapshot.get("plan_model"))
     if snapshot != run.config_snapshot:
         raise APIError(409, "configuration_changed", "排队后模型配置已变化，旧任务已停止，请重新生成。")
     if run.feature == 'plan_generation':
@@ -183,9 +184,9 @@ def _process(job):
                 with db.begin():
                     run, connection, fallback = validate_run(db, job, selected_id=connection.id)
                     run.state, run.stage = "running", "备用模型生成中" if selected_id else "正在分析输入证据"
-                    run.connection_id, run.model = connection.id, connection.model
+                    run.connection_id, run.model = connection.id, run.config_snapshot.get("plan_model") or connection.model
                     text = prompt(run)
-                    attempt = attempt_record(run.owner_id, connection, "generate", run.id)
+                    attempt = attempt_record(run.owner_id, connection, "generate", run.id, model=run.model)
                     db.add(attempt)
                     attempt_id, allowed = attempt.id, {item["id"] for item in run.evidence_refs}
 
@@ -193,7 +194,7 @@ def _process(job):
                 validate_run(db, job, selected_id=connection_id)
 
             reply, failure, _ = perform(attempt_id, connection, raw_key, prompt=text, system=instructions(run.feature),
-                                        before_send=before_send, time_budget=max(.01, deadline - time.monotonic()))
+                                        before_send=before_send, time_budget=max(.01, deadline - time.monotonic()), model=run.model)
             if reply:
                 try:
                     result = parse_result(reply.text, allowed, feature=run.feature) if run.feature == 'plan_generation' else parse_result(reply.text, allowed)

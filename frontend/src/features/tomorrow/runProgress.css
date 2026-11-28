@@ -1,0 +1,23 @@
+.pr-run-progress { margin: 14px 0; padding: 16px 18px; background: #f1f6fa; border-left: 3px solid #537b95; color: #203549; }
+.pr-progress-heading,.pr-progress-meta,.pr-run-progress ol { display: flex; justify-content: space-between; gap: 5px 12px; flex-wrap: wrap; }
+.pr-progress-heading strong { font-size: 17px; }
+.pr-progress-heading span,.pr-progress-meta,.pr-run-progress li { font-size: 13px; color: #53677a; font-variant-numeric: tabular-nums; }
+.pr-run-progress p { margin: 6px 0; }
+.pr-progress-track { height: 6px; margin: 12px 0 8px; overflow: hidden; border-radius: 6px; background: #dfe7ef; }
+.pr-progress-fill { position: relative; display: block; height: 100%; overflow: hidden; border-radius: inherit; background: linear-gradient(90deg,#294f85,#3679aa); }
+.pr-run-progress ol { list-style: none; padding: 0; margin: 8px 0 0; justify-content: flex-start; }
+.pr-run-progress li[data-state=current] { color: #235795; font-weight: 700; }
+.pr-run-progress li[data-state=current]::before { content: ''; display: inline-block; width: 6px; height: 6px; margin: 0 6px 2px 2px; border-radius: 50%; background: currentColor; }
+.pr-run-progress li[data-state=done] { color: #23664d; }
+.pr-paper .pr-model-issue { margin: 10px 0; padding: 8px 12px; border-inline-start: 2px solid #b48447; background: #faf6ee; }
+@media screen and (prefers-reduced-motion: no-preference) {
+  .pr-run-progress[data-active] .pr-progress-fill { transition: width 450ms ease-out; }
+  .pr-run-progress[data-active] .pr-progress-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg,transparent 32%,#ccecff80 50%,transparent 68%); animation: pr-progress-sheen 3.6s ease-in-out infinite; }
+  .pr-run-progress[data-active] li[data-state=current]::before { animation: pr-step-pulse 2.4s ease-out infinite; }
+}
+@keyframes pr-progress-sheen { 0% { transform: translateX(-100%); } 72%,100% { transform: translateX(100%); } }
+@keyframes pr-step-pulse { 0% { box-shadow: 0 0 0 0 #3279ac55; } 70%,100% { box-shadow: 0 0 0 4px #3279ac00; } }
+@media (forced-colors: active) {
+  .pr-progress-track { border: 1px solid CanvasText; }
+  .pr-progress-fill,.pr-run-progress li[data-state=current]::before { forced-color-adjust: none; background: Highlight; }
+}

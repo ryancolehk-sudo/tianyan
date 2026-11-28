@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     poll_seconds: float = Field(default=2, ge=0.1, le=30)
     build_revision: str = "development"
     data_collection_enabled: bool = False
+    anomaly_collection_enabled: bool = False
     required_worker_roles: list[Literal['scheduler', 'realtime', 'recovery', 'general']] = Field(default_factory=list)
     recovery_enabled: bool = True
     recovery_interval_seconds: int = Field(default=300, ge=30, le=3600)

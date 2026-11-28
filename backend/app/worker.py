@@ -465,6 +465,7 @@ def schedule_all(*, startup=False, progress=None):
 
 
 def schedule_archives(*, progress=None):
+    from app.market.anomaly_archive import schedule_anomaly
     from app.market.postclose_schedule import schedule_postclose
     from app.market.review_schedule import schedule_daily_archives
     from app.market.fund_history import schedule_fund_archives
@@ -472,7 +473,8 @@ def schedule_archives(*, progress=None):
     from app.market.sector_atlas_backfill import schedule_atlas_backfill
     from app.market.breadth_history import schedule_breadth_archives
     run_schedulers((schedule_postclose, schedule_daily_archives, schedule_fund_archives,
-                    schedule_direction_archives, schedule_atlas_backfill, schedule_breadth_archives), progress=progress)
+                    schedule_direction_archives, schedule_atlas_backfill, schedule_breadth_archives,
+                    schedule_anomaly), progress=progress)
 
 
 def schedule_general(*, progress=None):

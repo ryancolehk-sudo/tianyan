@@ -7,8 +7,8 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import load_only
 
-from app.ai.models import AiRun
-from app.auth import APIError
+from app.ai.models import AiBinding, AiRun, AiSettings, Connection
+from app.auth import APIError, require_role
 from app.evidence.common import content_hash, lock, normalized, now
 from app.evidence.models import EvidenceVersion
 from app.models import AuditEvent, Job, Provider
@@ -49,15 +49,152 @@ def permitted(db, owner_id, identities, cutoff=None):
     return result
 
 
+def codex_setup_step(db, owner_id, options):
+    from app.chatgpt.models import ChatGPTAccount
+    from app.chatgpt.service import account_view, availability
+    if any(option['source'] == 'chatgpt_plan' for option in options):
+        return 'ready'
+    if not availability()[0]:
+        return 'unavailable'
+    account = db.scalar(select(ChatGPTAccount).where(ChatGPTAccount.owner_id == owner_id,
+        ChatGPTAccount.state != 'disconnected').order_by(ChatGPTAccount.use_for_ai.desc(),
+        ChatGPTAccount.updated_at.desc(), ChatGPTAccount.id).limit(1))
+    if account is None:
+        return 'connect'
+    view = account_view(db, account)
+    if view.state != 'connected' or not view.sharing_granted:
+        return 'authorize'
+    if not view.model:
+        return 'choose_model'
+    if not view.tested:
+        return 'test_model'
+    return 'enable_model' if not view.enabled else 'check_model'
+
+
+def review_accounts(db, owner_id):
+    from app.chatgpt.models import ChatGPTAccount
+    from app.chatgpt.oauth import SHARING_SCOPES
+    from app.chatgpt.service import availability
+    if not availability()[0]:
+        return []
+    rows = db.execute(select(ChatGPTAccount, Connection).join(Connection, Connection.id == ChatGPTAccount.connection_id)
+        .where(ChatGPTAccount.owner_id == owner_id, ChatGPTAccount.state == 'connected',
+               ChatGPTAccount.secret_ref.is_not(None), Connection.secret_ref == ChatGPTAccount.secret_ref,
+               Connection.owner_id == owner_id, Connection.template == 'chatgpt_plan', Connection.archived.is_(False))
+        .order_by(ChatGPTAccount.use_for_ai.desc(), ChatGPTAccount.updated_at.desc(), ChatGPTAccount.id))
+    return [dict(id=str(account.id), connection_id=str(connection.id), name=account.email or 'Codex 账号',
+                 model=connection.model, revision=account.revision)
+            for account, connection in rows if SHARING_SCOPES.issubset(set(account.scopes or []))]
+
+
+def api_review_state(connection):
+    from app.ai.service import model_credential_health
+    health = model_credential_health(connection)
+    if health.get('error_code') == 'credential_changed_requires_test':
+        return 'needs_test'
+    if not health['configured']:
+        return 'needs_key'
+    if not connection.model:
+        return 'needs_model'
+    test = connection.last_test or {}
+    if test.get('revision') == connection.revision:
+        if test.get('status') in {'error', 'failed'}:
+            return 'test_failed'
+        if test.get('status') == 'unknown':
+            return 'test_unknown'
+    if test.get('status') != 'success' or connection.tested_revision != connection.revision or test.get('revision') != connection.revision:
+        return 'needs_test'
+    return 'ready' if connection.enabled else 'needs_enable'
+
+
+def review_providers(db):
+    from sqlalchemy.orm import undefer
+    return db.scalars(select(Provider).options(undefer(Provider.family)).where(
+        Provider.enabled.is_(True), Provider.configured.is_(True),
+        Provider.entitlement_status == 'verified').order_by(Provider.name)).all()
+
+
+def review_material_scope(sources, saved):
+    from app.market.registry import SOURCES
+    from app.market.review_protocol import DATASET_FAMILIES
+    from app.market.tushare_specs import SPECS
+    from app.tomorrow.data import SUPPLEMENTARY
+
+    requirements = [
+        ('沪市交易日校验', ['calendar_sse']), ('深市交易日校验', ['calendar_szse']),
+        ('全市场涨跌分布', ['daily']), ('涨跌停价格核验', ['limits']), ('涨跌停池与连板梯队', ['pools']),
+        ('主要指数收盘表现', ['indices']), ('板块行情与强弱排序', ['themes']),
+        ('板块成分股归属', ['members']), ('板块资金流向', ['theme_funds']),
+        ('龙虎榜上榜个股', ['lhb']), ('龙虎榜席位明细', ['seats']),
+    ]
+    needed = [(label, [DATASET_FAMILIES[key] for key in keys]) for label, keys in requirements]
+    needed.extend([
+        ('公告原文核验', ['cninfo_announcements']),
+        ('个股财务指标', ['tushare_fina_indicator', 'baostock_fundamental']),
+        ('个股资金流向', ['tushare_moneyflow', 'tushare_moneyflow_dc']),
+        ('复权价格核验', ['tushare_adj_factor']),
+    ])
+    relevant = {family for _, families in needed for family in families}
+    relevant.update(family for family, spec in SPECS.items() if 'tushare.' + spec.api in SUPPLEMENTARY)
+    grants = set(saved)
+    selected = [p for p in sources if all(p.rights.get(k) == 'allowed' for k in ('display', 'cache'))
+                and (str(p.id) in grants if grants else
+                     p.family in relevant or p.kind in ('news', 'manual') or p.family not in SOURCES)]
+    families = {p.family for p in selected}
+    gaps = [dict(interfaces=' / '.join(SOURCES[f].name for f in alternatives), impact=impact)
+            for impact, alternatives in needed if families.isdisjoint(alternatives)]
+    if not any(p.kind == 'news' and p.family != 'cninfo_announcements' for p in selected):
+        gaps.append(dict(interfaces='财经新闻正文接口', impact='核心新闻及财经热词分析'))
+    ids = sorted(str(p.id) for p in selected)
+    required_core = {DATASET_FAMILIES[key] for key in ('calendar_sse', 'calendar_szse', 'daily', 'limits', 'pools')}
+    available = {p.family for p in sources if all(p.rights.get(k) == 'allowed' for k in ('display', 'cache'))}
+    return ids, dict(count=len(ids), digest=content_hash(ids), gaps=gaps, core_missing=not required_core <= available)
+
+
 def settings_view(db, owner_id):
+    from app.ai.service import resolve_feature, usable_connection
     row = db.get(PlanSettings, owner_id)
     profile = deepcopy(row.profile) if row else {}
-    sources = db.scalars(select(Provider).where(Provider.enabled.is_(True), Provider.configured.is_(True),
-        Provider.entitlement_status == 'verified').order_by(Provider.name)).all()
-    return dict(revision=row.revision if row else 0, enabled=row.enabled if row else False,
-                use_ai=row.use_ai if row else True, cash=profile.get('cash'), holdings=profile.get('holdings', []),
+    connections = db.scalars(select(Connection).where(Connection.kind == 'model', Connection.archived.is_(False),
+        or_(Connection.owner_id.is_(None), Connection.owner_id == owner_id)).order_by(Connection.name, Connection.id)).all()
+    options, api_connections = [], []
+    for connection in connections:
+        if connection.template == 'chatgpt_plan':
+            try:
+                usable_connection(db, connection.id, owner_id)
+            except APIError:
+                continue
+        else:
+            state = api_review_state(connection)
+            api_connections.append(dict(id=str(connection.id), name=connection.name, model=connection.model,
+                                        revision=connection.revision, state=state))
+            if state != 'ready':
+                continue
+        options.append(dict(id=str(connection.id), name=connection.name, model=connection.model,
+            source='chatgpt_plan' if connection.template == 'chatgpt_plan' else 'api'))
+    config, binding = db.get(AiSettings, 1), db.get(AiBinding, 'plan_generation')
+    gate = None
+    if not config or not config.enabled:
+        gate = '全局 AI 已关闭'
+    elif not binding or not binding.enabled:
+        gate = '明日预案的 AI 生成功能已关闭'
+    default_model = default_connection_id = None
+    if not gate:
+        try:
+            connection = resolve_feature(db, 'plan_generation', owner_id)[0]
+            if any(option['id'] == str(connection.id) for option in options):
+                default_model, default_connection_id = connection.model, str(connection.id)
+        except APIError:
+            pass
+    sources = review_providers(db)
+    _, materials = review_material_scope(sources, profile.get('ai_source_ids', []))
+    return dict(codex_accounts=review_accounts(db, owner_id), codex_setup=codex_setup_step(db, owner_id, options),
+                api_connections=api_connections, api_bound=any(c.template != 'chatgpt_plan' and c.secret_ref for c in connections),
+                revision=row.revision if row else 0, enabled=row.enabled if row else False,
+                use_ai=row.use_ai if row else False, cash=profile.get('cash'), holdings=profile.get('holdings', []),
                 risk_policy=profile.get('risk_policy', s.RiskPolicy().model_dump()),
-                ai_source_ids=profile.get('ai_source_ids', []),
+                ai_source_ids=profile.get('ai_source_ids', []), review_materials=materials, model_options=options,
+                model_connection_id=profile.get('model_connection_id'), model_gate=gate, default_model=default_model, default_connection_id=default_connection_id,
                 sources=[dict(id=str(p.id), name=p.name, ai_allowed=all(p.rights.get(k) == 'allowed' for k in ('display', 'cache')))
                          for p in sources], evening_time='22:30', overnight_time='08:30', timezone='Asia/Shanghai')
 
@@ -68,9 +205,18 @@ def update_settings(db, owner, body, request_id=None):
     if body.expected_revision != (row.revision if row else 0):
         raise APIError(412, 'revision_conflict', '设置已更新，请先读取最新设置；你的输入仍可保留。')
     if row is None:
-        row = PlanSettings(owner_id=owner.id, revision=0, enabled=False, use_ai=True, profile={})
+        row = PlanSettings(owner_id=owner.id, revision=0, enabled=False, use_ai=False, profile={})
         db.add(row)
     profile = deepcopy(row.profile)
+    if 'model_connection_id' in body.model_fields_set:
+        if body.model_connection_id:
+            from app.ai.service import usable_connection
+            connection = usable_connection(db, body.model_connection_id, owner.id)
+            if connection.template != 'chatgpt_plan' and not connection.secret_ref:
+                raise APIError(422, 'model_not_connected', '请先接入模型 API 并测试连接。')
+            profile['model_connection_id'] = str(connection.id)
+        else:
+            profile.pop('model_connection_id', None)
     for field in ('cash', 'holdings', 'risk_policy', 'ai_source_ids'):
         if field in body.model_fields_set:
             profile[field] = normalized(getattr(body, field))
@@ -86,6 +232,92 @@ def update_settings(db, owner, body, request_id=None):
     audit(db, owner, 'settings.update', request_id=request_id)
     db.flush()
     return settings_view(db, owner.id), 'complete', []
+
+
+def enable_plan_ai(db, owner, connection_id, request_id=None):
+    from app.ai.service import usable_connection
+    usable_connection(db, connection_id, owner.id)
+    open_plan_ai(db, owner, connection_id, request_id)
+    return settings_view(db, owner.id), 'complete', []
+
+
+def open_plan_ai(db, owner, connection_id, request_id):
+    require_role(owner, 'admin')
+    lock(db, 'ai:settings')
+    config = db.get(AiSettings, 1)
+    binding = db.get(AiBinding, 'plan_generation')
+    if config is None:
+        db.add(AiSettings(id=1, enabled=True, revision=1))
+    elif not config.enabled:
+        config.enabled = True
+        config.revision += 1
+    if binding is None:
+        db.add(AiBinding(feature='plan_generation', enabled=True, revision=1))
+    elif not binding.enabled:
+        binding.enabled = True
+        binding.revision += 1
+    audit(db, owner, 'ai.enable', connection_id, request_id)
+    db.flush()
+
+
+def prepare_review_api(db, owner, review, request_id):
+    from app.ai.probes import existing_input
+    from app.ai.service import store_connection
+    connection = db.scalar(select(Connection).where(Connection.id == review.connection_id,
+        Connection.kind == 'model', Connection.template != 'chatgpt_plan', Connection.archived.is_(False),
+        or_(Connection.owner_id.is_(None), Connection.owner_id == owner.id)).with_for_update())
+    if connection is None:
+        raise APIError(404, 'not_found', '这项 API 接入不存在或不可用。')
+    if connection.revision != review.connection_revision:
+        raise APIError(412, 'configuration_changed', 'API 配置已变化，请核对最新模型后再复盘。')
+    state = api_review_state(connection)
+    if state == 'ready':
+        return connection
+    if state != 'needs_enable':
+        raise APIError(409, 'model_not_ready', '请检查已保存的 API Key 和模型，并测试当前配置。')
+    if not review.enable_connection:
+        raise APIError(409, 'api_not_enabled', '这项 API 已通过测试，需启用后复盘。')
+    require_role(owner, 'admin')
+    body = existing_input(connection).model_copy(update={'enabled': True})
+    store_connection(db, owner, body, connection.id, request_id, owner_id=owner.id)
+    return connection
+
+
+def apply_review(db, owner, review, config, request_id):
+    from app.ai.service import authorized_plan_codex, resolve_feature
+    codex = isinstance(review, s.PlanCodexReview)
+    if codex:
+        authorized_plan_codex(db, review.connection_id, owner.id)
+    else:
+        connection = prepare_review_api(db, owner, review, request_id)
+        config['requested_model'] = connection.model
+    profile = config['profile']
+    if review.materials_digest is not None:
+        ids, materials = review_material_scope(review_providers(db), profile.get('ai_source_ids', []))
+        if review.source_ids is not None or review.materials_digest != materials['digest']:
+            raise APIError(412, 'revision_conflict', '可用接口已变化，请按更新后的资料范围复盘。')
+        if not ids:
+            raise APIError(409, 'ai_sources_missing', '没有可供模型复盘的资料接口。')
+        if not profile.get('ai_source_ids'):
+            profile['ai_source_ids'] = ids
+            config['one_time_sources'] = True
+    if review.source_ids is not None:
+        if profile.get('ai_source_ids'):
+            raise APIError(412, 'revision_conflict', '已有资料授权，请按最新选择复盘。')
+        requested = set(review.source_ids)
+        rows = db.scalars(select(Provider).where(Provider.id.in_(requested), Provider.enabled.is_(True),
+            Provider.configured.is_(True), Provider.entitlement_status == 'verified'))
+        allowed = {p.id for p in rows if all(p.rights.get(k) == 'allowed' for k in ('display', 'cache'))}
+        if requested != allowed:
+            raise APIError(409, 'input_permission_changed', '所选复盘资料的权限已变化，请重新选择。')
+        profile['ai_source_ids'] = sorted(str(identity) for identity in allowed)
+        config['one_time_sources'] = True
+    if not profile.get('ai_source_ids'):
+        raise APIError(409, 'ai_sources_missing', '请为这次复盘选择资料。')
+    if review.enable_ai:
+        open_plan_ai(db, owner, review.connection_id, request_id)
+    _, _, config['ai'] = resolve_feature(db, 'plan_generation', owner.id,
+        plan_connection_id=review.connection_id, plan_model=review.model if codex else None)
 
 
 def calendar_days(db, cutoff):
@@ -130,6 +362,8 @@ def queue_run(db, owner, body, request_id=None, *, schedule_key=None):
     elif target <= source_day or target not in known_days:
         raise APIError(422, 'target_day_unverified', '目标日期需为来源日期之后的已核验共同交易日。')
     settings = db.get(PlanSettings, owner.id)
+    if body.expected_settings_revision is not None and body.expected_settings_revision != (settings.revision if settings else 0):
+        raise APIError(412, 'revision_conflict', '预案设置已变化，请重新核对模型后生成。')
     profile = deepcopy(settings.profile) if settings else {}
     from app.config import settings as runtime_settings
     config = dict(profile=profile, settings_revision=settings.revision if settings else 0,
@@ -137,12 +371,20 @@ def queue_run(db, owner, body, request_id=None, *, schedule_key=None):
     limitations = []
     if target is None:
         limitations.append('未来交易日历不足，目标交易日待核验，草稿不能确认。')
-    if body.use_ai:
+    if body.codex_review or body.api_review:
+        apply_review(db, owner, body.codex_review or body.api_review, config, request_id)
+    elif body.use_ai:
         from app.ai.service import resolve_feature
+        explicit = body.model_connection_id is not None or body.expected_settings_revision is not None
+        if explicit and not profile.get('ai_source_ids'):
+            raise APIError(409, 'ai_sources_missing', '请先选择允许模型读取的预案资料。')
         try:
-            _, _, ai_config = resolve_feature(db, 'plan_generation', owner.id)
+            _, _, ai_config = resolve_feature(db, 'plan_generation', owner.id,
+                plan_connection_id=body.model_connection_id or profile.get('model_connection_id'))
             config['ai'] = ai_config
         except APIError as error:
+            if explicit:
+                raise
             config['ai_unavailable'] = error.code
             limitations.append('AI尚未就绪：' + error.message + ' 已保留规则资料草稿。')
     # A scheduled slot is unique even if a model/profile changes while it is queued.
@@ -189,6 +431,14 @@ def run_view(db, row):
                        .order_by(PlanReport.revision_number.desc()).limit(1))
     result = s.RunView.model_validate(row).model_dump(mode='json')
     result['report_id'] = str(report.id) if report else None
+    snapshot = row.config_snapshot or {}
+    result['requested_model'] = snapshot.get('requested_model') or (snapshot.get('ai') or {}).get('plan_model')
+    if result['requested_model'] and row.error_code and row.stages and (stage_id := row.stages[-1].get('ai_run_id')):
+        from app.ai.models import AiAttempt
+        details = db.scalar(select(AiAttempt.safe_details).where(AiAttempt.owner_id == row.owner_id,
+            AiAttempt.run_id == uuid.UUID(stage_id), AiAttempt.error_code == row.error_code)
+            .order_by(AiAttempt.started_at.desc()).limit(1))
+        result['model_error'] = (details or {}).get('message')
     return result
 
 
@@ -214,9 +464,18 @@ def report_view(db, owner_id, identity):
         raise APIError(409, 'input_permission_changed', '报告引用的来源权限或版本已变化，原内容暂停展示。')
     confirmed = db.scalar(select(PlanConfirmation).where(PlanConfirmation.report_id == row.id))
     run = db.get(PlanRun, row.run_id)
+    roles = set(row.payload.get('ai_completed_roles') or [])
+    stage_ids = [uuid.UUID(step['ai_run_id']) for step in run.stages or []
+                 if step.get('role') in roles and step.get('ai_run_id')]
+    models = db.scalars(select(AiRun.model).distinct().where(AiRun.id.in_(stage_ids),
+        AiRun.owner_id == owner_id, AiRun.state == 'succeeded', AiRun.completed_at <= row.created_at)
+        .order_by(AiRun.model)).all() if stage_ids else []
     return dict(deepcopy(row.payload), id=str(row.id), run_id=str(row.run_id), revision_number=row.revision_number,
                 based_on_id=str(row.based_on_id) if row.based_on_id else None, slot=run.slot,
-                status='confirmed' if confirmed else 'draft', author_type=row.author_type,
+                status='confirmed' if confirmed else 'draft', author_type=row.author_type, generation_models=models,
+                can_export=all(source.rights.get("export") == "allowed" or
+                               (version.owner_id == owner_id and source.kind == "manual" and version.provenance == "manual")
+                               for version, source in accessible.values()),
                 content_hash=row.content_hash, created_at=row.created_at.isoformat(),
                 confirmed_at=confirmed.created_at.isoformat() if confirmed else None)
 
